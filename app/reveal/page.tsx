@@ -48,7 +48,7 @@ function RevealContent() {
   const searchParams = useSearchParams();
   const [synthesis, setSynthesis] = useState<IkigaiSynthesis | null>(null);
   const [phase, setPhase] = useState<"cinematic" | "title" | "expanded">("cinematic");
-  const [openDeepDive, setOpenDeepDive] = useState<number | null>(null);
+  const [openDeepDive, setOpenDeepDive] = useState<number | null>(0);
   const [copied, setCopied] = useState(false);
 
   const cinematicOrbSize = useResponsiveSize(120, 160);
@@ -73,14 +73,7 @@ function RevealContent() {
   if (!synthesis) return null;
 
   async function handleShare() {
-    const highlights = synthesis!.highlights?.join(" · ") || "";
-    const text = [
-      `✨ My Ikigai: "${synthesis!.title}"`,
-      ``,
-      synthesis!.subtitle,
-      highlights ? `\n${highlights}` : "",
-      `\nDiscover yours → ikigai.ai`,
-    ].filter(Boolean).join("\n");
+    const text = `My Ikigai: "${synthesis!.title}" — ${synthesis!.subtitle}\n\nFind yours → ikigai.ai`;
 
     try {
       if (navigator.share) {
@@ -375,7 +368,7 @@ function RevealContent() {
                         .split(/\n\n+/)
                         .filter(Boolean)
                         .map((para, i) => (
-                          <p key={i} className="text-sm text-white/55 font-light leading-relaxed">{para}</p>
+                          <p key={i} className="text-[15px] text-white/72 font-light leading-[1.75]">{para}</p>
                         ))}
                     </div>
                   </div>
@@ -437,7 +430,7 @@ function RevealContent() {
                           >
                             {i + 1}
                           </span>
-                          <span className="flex-1 text-sm text-white/72 font-light leading-snug pr-2">
+                          <span className="flex-1 text-sm text-white/85 font-normal leading-snug pr-2">
                             {item.heading}
                           </span>
                           <motion.div
@@ -458,7 +451,7 @@ function RevealContent() {
                               className="overflow-hidden"
                             >
                               <p
-                                className="px-5 pb-5 text-sm text-white/50 font-light leading-relaxed pt-3"
+                                className="px-5 pb-5 text-[14px] text-white/65 font-light leading-[1.65] pt-3"
                                 style={{ borderTop: "1px solid rgba(249,115,22,0.08)" }}
                               >
                                 {item.detail}
@@ -572,7 +565,7 @@ function InsightCard({
         {items.map((item, i) => (
           <li key={i} className="flex items-start gap-2.5">
             <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
-            <span className="text-xs text-white/65 font-light leading-relaxed">{item}</span>
+            <span className="text-[13px] text-white/75 font-light leading-relaxed">{item}</span>
           </li>
         ))}
       </ul>

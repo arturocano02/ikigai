@@ -34,14 +34,14 @@ ${insightsSummary}
 Return a JSON object with this exact structure (no markdown, raw JSON only):
 {
   "title": "2-4 word unique Ikigai title (e.g. 'Systems Storyteller', 'AI Clarity Builder'). Evocative, not generic.",
-  "subtitle": "One sentence capturing the essence - should feel shockingly accurate",
+  "subtitle": "One direct, declarative sentence - a verdict, not a hedge or a question. Should feel shockingly accurate.",
   "highlights": [
     "3-5 word punchy phrase",
     "Another 3-5 word phrase",
     "A third one",
     "Optional fourth"
   ],
-  "explanation": "3-4 paragraph deep explanation. Should feel shockingly accurate and emotionally resonant. Reference specific things they said. Use 'you' throughout.",
+  "explanation": "2-3 SHORT paragraphs (2-3 sentences each, never more). Punchy and conversational, like a smart friend talking to you, not an essay. Should feel shockingly accurate and emotionally resonant. Reference specific things they said. Use 'you' throughout. No filler sentences.",
   "patterns": ["3-5 recurring themes observed in the conversation", "..."],
   "strengths": ["4-6 natural strengths identified from what they described", "..."],
   "idealEnvironments": ["3-4 specific environments where they'd do their best work", "..."],
@@ -49,7 +49,7 @@ Return a JSON object with this exact structure (no markdown, raw JSON only):
   "deepDive": [
     {
       "heading": "6-10 word insight title (like an article headline)",
-      "detail": "2-3 sentences of deep, personal insight referencing specifics from the conversation"
+      "detail": "1-2 SHORT, punchy sentences of deep, personal insight referencing specifics from the conversation. No padding."
     },
     {
       "heading": "Another insight headline",
@@ -71,7 +71,9 @@ Return a JSON object with this exact structure (no markdown, raw JSON only):
 jobSearchTerms: 3-5 simple, standard job titles (1-3 words each) that a mainstream job board like LinkedIn or Indeed would actually return results for. NOT creative phrases - real job titles (e.g. "software engineer", "product manager", "UX designer", "musician", "marketing manager"). These are used to query real job APIs.
 
 highlights: Ultra-short viral phrases - the kind a person would put in their bio. Think "Teaches through building", "Turns AI human", "Systems thinker with soul". Not generic.
-deepDive headings: Intriguing, personal, slightly provocative. Like "The contradiction that makes you powerful" or "Why you get frustrated with most teams". Deep dives should feel like insights only someone who really listened could give.`;
+deepDive headings: Intriguing, personal, slightly provocative. Like "The contradiction that makes you powerful" or "Why you get frustrated with most teams". Deep dives should feel like insights only someone who really listened could give.
+
+EVERY list item (patterns, strengths, idealEnvironments, motivations) must be a single short phrase, max ~8 words. No run-on sentences. These render as scannable bullet points, not prose - keep them tight and punchy.`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
