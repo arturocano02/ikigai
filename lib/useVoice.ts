@@ -164,12 +164,19 @@ export function useVoice(onTranscript: (text: string) => void) {
           const audio = new Audio(url);
           currentAudioRef.current = audio;
           audio.onended = () => { URL.revokeObjectURL(url); finish(); };
-          audio.onerror = () => { URL.revokeObjectURL(url); fallbackTTS(text, finish); };
+          audio.onerror = () => {
+            URL.revokeObjectURL(url);
+            console.error("[voice] ElevenLabs audio failed to play, falling back to browser TTS");
+            fallbackTTS(text, finish);
+          };
           await audio.play();
           return;
+        } else {
+          const body = await res.text().catch(() => "");
+          console.error(`[voice] /api/speak returned ${res.status}, falling back to browser TTS:`, body);
         }
-      } catch {
-        // ElevenLabs unavailable — fall through to browser TTS
+      } catch (err) {
+        console.error("[voice] /api/speak request failed, falling back to browser TTS:", err);
       }
 
       fallbackTTS(text, finish);
