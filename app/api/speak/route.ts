@@ -7,12 +7,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No text" }, { status: 400 });
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json({ error: "No ElevenLabs key" }, { status: 503 });
   }
 
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || "hpp4J3VqNfWAUOO0d1Us";
+  const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || "hpp4J3VqNfWAUOO0d1Us";
+  console.log(`[speak] using voiceId=${voiceId} (from env: ${!!process.env.ELEVENLABS_VOICE_ID})`);
 
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
