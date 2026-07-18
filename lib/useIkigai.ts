@@ -60,11 +60,17 @@ export function useIkigai(
   ) => {
     setState((s) => ({ ...s, isSynthesizing: true, phase: "synthesizing" }));
 
+    let userContext: { age?: string; currentRole?: string; otherContext?: string } | undefined;
+    try {
+      const raw = localStorage.getItem("ikigai_user_context");
+      if (raw) userContext = JSON.parse(raw);
+    } catch { /* ignore */ }
+
     try {
       const res = await fetch("/api/synthesize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progress, insights, messages }),
+        body: JSON.stringify({ progress, insights, messages, userContext }),
       });
 
       const data = await res.json();

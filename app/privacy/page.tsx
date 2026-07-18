@@ -66,11 +66,11 @@ export default function PrivacyPage() {
           We process your data on the basis of:
           <ul className="space-y-2 list-none mt-2">
             <Li>
-              <strong className="text-white/65">Contractual necessity</strong> — to provide the
+              <strong className="text-white/65">Contractual necessity</strong>:to provide the
               account and session-saving features you sign up for.
             </Li>
             <Li>
-              <strong className="text-white/65">Consent</strong> — you provide consent when you
+              <strong className="text-white/65">Consent</strong>:you provide consent when you
               create an account. You may withdraw this at any time by deleting your account.
             </Li>
           </ul>
@@ -80,11 +80,11 @@ export default function PrivacyPage() {
           You have the right to:
           <ul className="space-y-2 list-none mt-2">
             <Li>
-              <strong className="text-white/65">Access</strong> — request a copy of the data we
+              <strong className="text-white/65">Access</strong>:request a copy of the data we
               hold about you.
             </Li>
             <Li>
-              <strong className="text-white/65">Erasure</strong> — delete your account and all
+              <strong className="text-white/65">Erasure</strong>:delete your account and all
               associated data at any time from your{" "}
               <Link href="/profile" className="underline underline-offset-2 text-white/50 hover:text-white/70">
                 profile page
@@ -92,15 +92,15 @@ export default function PrivacyPage() {
               .
             </Li>
             <Li>
-              <strong className="text-white/65">Portability</strong> — your Ikigai sessions are
+              <strong className="text-white/65">Portability</strong>:your Ikigai sessions are
               viewable and copyable from your profile at any time.
             </Li>
             <Li>
-              <strong className="text-white/65">Rectification</strong> — you can update your
+              <strong className="text-white/65">Rectification</strong>:you can update your
               display name in your profile.
             </Li>
             <Li>
-              <strong className="text-white/65">Object</strong> — to contact us if you believe we
+              <strong className="text-white/65">Object</strong>:to contact us if you believe we
               are processing your data in a way that is not justified.
             </Li>
           </ul>
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
         <Section title="Third-party services">
           <ul className="space-y-2 list-none">
             <Li>
-              <strong className="text-white/65">Supabase</strong> — our database and authentication
+              <strong className="text-white/65">Supabase</strong>:our database and authentication
               provider. Data is stored in the EU (Ireland). See{" "}
               <a
                 href="https://supabase.com/privacy"
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
               .
             </Li>
             <Li>
-              <strong className="text-white/65">Google OAuth</strong> — used only if you choose to
+              <strong className="text-white/65">Google OAuth</strong>:used only if you choose to
               sign in with Google. We only receive your name, email, and profile picture. See{" "}
               <a
                 href="https://policies.google.com/privacy"
@@ -146,7 +146,7 @@ export default function PrivacyPage() {
               .
             </Li>
             <Li>
-              <strong className="text-white/65">Anthropic / OpenAI</strong> — AI models are used
+              <strong className="text-white/65">Anthropic / OpenAI</strong>:AI models are used
               to generate your Ikigai synthesis. Conversation content is sent to these APIs and
               subject to their data retention policies. We do not associate conversation data with
               your account identifier when sending to AI providers.
