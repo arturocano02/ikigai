@@ -10,7 +10,7 @@ export interface VoiceState {
   error: string | null;
 }
 
-export function useVoice(onTranscript: (text: string) => void) {
+export function useVoice(onTranscript: (text: string) => void, language: "en" | "es" = "en") {
   const [state, setState] = useState<VoiceState>({
     isListening: false,
     isSpeaking: false,
@@ -58,7 +58,7 @@ export function useVoice(onTranscript: (text: string) => void) {
         const rec = new SR();
         rec.continuous = true;
         rec.interimResults = true;
-        rec.lang = "en-US";
+        rec.lang = language === "es" ? "es-ES" : "en-US";
         let finalTranscript = "";
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,7 +173,7 @@ export function useVoice(onTranscript: (text: string) => void) {
         const res = await fetch("/api/speak", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, language }),
         });
 
         if (res.ok) {
@@ -185,7 +185,7 @@ export function useVoice(onTranscript: (text: string) => void) {
           audio.onerror = () => {
             URL.revokeObjectURL(url);
             console.error("[voice] ElevenLabs audio failed to play, falling back to browser TTS");
-            fallbackTTS(text, finish);
+            fallbackTTS(text, finish, language);
           };
           await audio.play();
           // Audio is playing — clear the load timeout so it plays to completion
@@ -199,9 +199,9 @@ export function useVoice(onTranscript: (text: string) => void) {
         console.error("[voice] /api/speak request failed, falling back to browser TTS:", err);
       }
 
-      fallbackTTS(text, finish);
+      fallbackTTS(text, finish, language);
     });
-  }, []);
+  }, [language]);
 
   const cancelSpeech = useCallback(() => {
     if (currentAudioRef.current) {
@@ -215,16 +215,17 @@ export function useVoice(onTranscript: (text: string) => void) {
   return { state, startListening, stopListening, speak, cancelSpeech };
 }
 
-function fallbackTTS(text: string, onEnd: () => void) {
+function fallbackTTS(text: string, onEnd: () => void, language: "en" | "es" = "en") {
   if (typeof window === "undefined" || !window.speechSynthesis) { onEnd(); return; }
   const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = language === "es" ? "es-ES" : "en-US";
   utt.rate = 0.9;
   utt.pitch = 1;
   utt.volume = 1;
   const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(
-    (v) => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang.startsWith("en") && v.localService)
-  );
+  const preferred = language === "es"
+    ? voices.find((v) => v.lang.startsWith("es") && v.localService) ?? voices.find((v) => v.lang.startsWith("es"))
+    : voices.find((v) => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang.startsWith("en") && v.localService));
   if (preferred) utt.voice = preferred;
   utt.onend = onEnd;
   utt.onerror = onEnd;

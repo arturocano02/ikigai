@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { text } = await req.json();
+  const { text, language = "en" } = await req.json() as { text: string; language?: "en" | "es" };
 
   if (!text?.trim()) {
     return NextResponse.json({ error: "No text" }, { status: 400 });
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         text: text.slice(0, 1000),
-        model_id: "eleven_flash_v2_5",
+        model_id: language === "es" ? "eleven_multilingual_v2" : "eleven_flash_v2_5",
         voice_settings: {
           stability: 0.35,
           similarity_boost: 0.75,

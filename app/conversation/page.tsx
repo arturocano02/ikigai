@@ -19,33 +19,51 @@ const LENGTH_META: Record<ConvLength, { label: string; desc: string }> = {
   long:   { label: "Long",   desc: "In depth" },
 };
 
-const INTRO_MESSAGE =
-  "Hey. I'm going to ask you a few questions and we'll figure out your Ikigai together. " +
-  "No wrong answers. What kind of things make you lose track of time?";
+const INTRO_MESSAGE = {
+  en: "Hey. I'm going to ask you a few questions and we'll figure out your Ikigai together. " +
+    "No wrong answers. What kind of things make you lose track of time?",
+  es: "Hola. Voy a hacerte unas preguntas y juntos vamos a descubrir tu Ikigai. " +
+    "No hay respuestas incorrectas. ¿Qué tipo de cosas hacen que pierdas la noción del tiempo?",
+};
 
-const RESUME_INTRO =
-  "Welcome back. Based on what we covered, I have a few more questions to sharpen your profile. " +
-  "What did we miss - is there a side of you we haven't touched yet?";
+const RESUME_INTRO = {
+  en: "Welcome back. Based on what we covered, I have a few more questions to sharpen your profile. " +
+    "What did we miss - is there a side of you we haven't touched yet?",
+  es: "Bienvenido de nuevo. A partir de lo que hablamos, tengo unas preguntas más para afinar tu perfil. " +
+    "¿Qué nos hemos dejado? ¿Hay algún aspecto tuyo que no hayamos explorado?",
+};
 
-const SYNTHESIS_STAGES = [
-  "Mapping what drives you...",
-  "Finding the intersection of your passions...",
-  "Weighing your strengths...",
-  "Listening for what the world needs...",
-  "Aligning purpose with livelihood...",
-  "Drawing the circles together...",
-  "Searching for your center...",
-  "Composing your portrait...",
-  "Revealing what was always there...",
-  "Almost ready...",
-];
+const SYNTHESIS_STAGES = {
+  en: [
+    "Mapping what drives you...",
+    "Finding the intersection of your passions...",
+    "Weighing your strengths...",
+    "Listening for what the world needs...",
+    "Aligning purpose with livelihood...",
+    "Drawing the circles together...",
+    "Searching for your center...",
+    "Composing your portrait...",
+    "Revealing what was always there...",
+    "Almost ready...",
+  ],
+  es: [
+    "Trazando lo que te mueve...",
+    "Buscando la intersección de tus pasiones...",
+    "Midiendo tus fortalezas...",
+    "Escuchando lo que el mundo necesita...",
+    "Alineando propósito y sustento...",
+    "Uniendo los círculos...",
+    "Buscando tu centro...",
+    "Componiendo tu retrato...",
+    "Revelando lo que siempre estuvo ahí...",
+    "Casi listo...",
+  ],
+};
 
 const DIM_COLORS = { love: "#f43f5e", good: "#10b981", world: "#06b6d4", paid: "#f59e0b" } as const;
 const DIM_LABELS = {
-  love: "What You Love",
-  good: "What You're Good At",
-  world: "What The World Needs",
-  paid: "What You Can Be Paid For",
+  en: { love: "What You Love", good: "What You're Good At", world: "What The World Needs", paid: "What You Can Be Paid For" },
+  es: { love: "Lo que Amas", good: "En lo que Destacas", world: "Lo que el Mundo Necesita", paid: "Por lo que te Pueden Pagar" },
 } as const;
 
 export default function ConversationPage() {
@@ -113,7 +131,7 @@ export default function ConversationPage() {
     }, explorationModeRef.current);
   }, []);
 
-  const voice = useVoice(handleTranscript);
+  const voice = useVoice(handleTranscript, language);
 
   useEffect(() => {
     speakRef.current = voice.speak;
@@ -122,11 +140,12 @@ export default function ConversationPage() {
   // Cycle through labels while synthesizing
   useEffect(() => {
     if (ikigai.phase !== "synthesizing" && !overlayLocked) return;
+    const stages = SYNTHESIS_STAGES[language];
     const interval = setInterval(() => {
-      setSynthesisStageIdx((i) => (i + 1) % SYNTHESIS_STAGES.length);
+      setSynthesisStageIdx((i) => (i + 1) % stages.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, [ikigai.phase, overlayLocked]);
+  }, [ikigai.phase, overlayLocked, language]);
 
   // Navigate to reveal — lock the overlay to prevent flicker
   useEffect(() => {
@@ -147,7 +166,7 @@ export default function ConversationPage() {
   function unlockAndStart() {
     if (audioUnlocked) return;
     setAudioUnlocked(true);
-    const intro = isResume ? RESUME_INTRO : INTRO_MESSAGE;
+    const intro = isResume ? RESUME_INTRO[language] : INTRO_MESSAGE[language];
     setOrbState("speaking");
     setCurrentText(intro);
 
@@ -340,7 +359,9 @@ export default function ConversationPage() {
                   WebkitTapHighlightColor: "transparent",
                 }}
               >
-                {isResume ? "Continue" : "Begin conversation"}
+                {isResume
+                  ? (language === "es" ? "Continuar" : "Continue")
+                  : (language === "es" ? "Comenzar conversación" : "Begin conversation")}
               </button>
             </motion.div>
           )}
@@ -390,11 +411,17 @@ export default function ConversationPage() {
             <motion.div className="mt-5 flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <StatusDot state={orbState} isListening={voice.state.isListening} />
               <span className="text-xs text-white/40 tracking-widest uppercase">
-                {orbState === "listening" ? "Listening"
-                  : orbState === "thinking" ? "Thinking"
-                  : orbState === "speaking" ? "Speaking"
-                  : inputMode === "text" ? "Type your answer"
-                  : "Tap to speak"}
+                {language === "es"
+                  ? (orbState === "listening" ? "Escuchando"
+                    : orbState === "thinking" ? "Pensando"
+                    : orbState === "speaking" ? "Hablando"
+                    : inputMode === "text" ? "Escribe tu respuesta"
+                    : "Toca para hablar")
+                  : (orbState === "listening" ? "Listening"
+                    : orbState === "thinking" ? "Thinking"
+                    : orbState === "speaking" ? "Speaking"
+                    : inputMode === "text" ? "Type your answer"
+                    : "Tap to speak")}
               </span>
             </motion.div>
           )}
@@ -448,7 +475,9 @@ export default function ConversationPage() {
                     {voice.state.isListening
                       ? <Mic className="w-4 h-4" style={{ color: "#f97316" }} />
                       : <MicOff className="w-4 h-4 text-white/40" />}
-                    <span>{voice.state.isListening ? "Listening..." : "Tap to speak"}</span>
+                    <span>{voice.state.isListening
+                      ? (language === "es" ? "Escuchando..." : "Listening...")
+                      : (language === "es" ? "Toca para hablar" : "Tap to speak")}</span>
                   </motion.button>
                   <button
                     onClick={() => { setExplorationMode(true); handleTranscript("I don't know"); }}
@@ -456,7 +485,7 @@ export default function ConversationPage() {
                     className="px-3.5 py-2.5 rounded-full text-[11px] text-white/30 hover:text-white/55 transition-colors touch-manipulation disabled:opacity-0"
                     style={{ border: "1px solid rgba(255,255,255,0.07)", minHeight: 44, WebkitTapHighlightColor: "transparent" }}
                   >
-                    I don&apos;t know
+                    {language === "es" ? "No sé" : "I don't know"}
                   </button>
                   <button onClick={switchToText}
                     className="p-2.5 rounded-full glass text-white/30 hover:text-white/60 transition-colors touch-manipulation"
@@ -470,7 +499,7 @@ export default function ConversationPage() {
                   <input ref={inputRef} type="text" value={typedMessage}
                     onChange={(e) => setTypedMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type your answer..."
+                    placeholder={language === "es" ? "Escribe tu respuesta..." : "Type your answer..."}
                     disabled={isProcessing}
                     className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all disabled:opacity-40"
                     style={{ minHeight: 44, borderColor: "rgba(255,255,255,0.1)" }}
@@ -502,7 +531,7 @@ export default function ConversationPage() {
                     className="px-3.5 py-2.5 rounded-full text-[11px] text-white/30 hover:text-white/55 transition-colors touch-manipulation shrink-0 disabled:opacity-0"
                     style={{ border: "1px solid rgba(255,255,255,0.07)", minHeight: 44, WebkitTapHighlightColor: "transparent" }}
                   >
-                    I don&apos;t know
+                    {language === "es" ? "No sé" : "I don't know"}
                   </button>
                 </div>
               )}
@@ -549,7 +578,7 @@ export default function ConversationPage() {
                 transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
                 whileTap={canReveal && !isProcessing ? { scale: 0.96 } : {}}
               >
-                <span>Reveal Ikigai</span>
+                <span>{language === "es" ? "Revelar mi Ikigai" : "Reveal Ikigai"}</span>
                 {confidenceScore > 0 && (
                   <span
                     className="text-xs font-mono"
@@ -560,7 +589,9 @@ export default function ConversationPage() {
                 )}
               </motion.button>
               <p className="text-[10px] text-white/20 tracking-wider">
-                {!canReveal ? "Keep sharing to build confidence" : mapIsReady ? "Your map is complete" : "Continue or reveal now"}
+                {language === "es"
+                  ? (!canReveal ? "Sigue compartiendo para ganar confianza" : mapIsReady ? "Tu mapa está completo" : "Continúa o revela ahora")
+                  : (!canReveal ? "Keep sharing to build confidence" : mapIsReady ? "Your map is complete" : "Continue or reveal now")}
               </p>
             </motion.div>
           )}
@@ -597,7 +628,7 @@ export default function ConversationPage() {
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className="w-1.5 h-1.5 rounded-full shrink-0"
                           style={{ background: DIM_COLORS[dim], opacity: p > 0 ? 1 : 0.3 }} />
-                        <span className="text-[10px] text-white/45 leading-tight min-w-0 truncate">{DIM_LABELS[dim]}</span>
+                        <span className="text-[10px] text-white/45 leading-tight min-w-0 truncate">{DIM_LABELS[language][dim]}</span>
                       </div>
                       {lastInsight ? (
                         <p className="text-[9px] text-white/30 leading-relaxed line-clamp-2">{lastInsight}</p>
@@ -638,7 +669,7 @@ export default function ConversationPage() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.7 }}
               >
-                {SYNTHESIS_STAGES[synthesisStageIdx]}
+                {SYNTHESIS_STAGES[language][synthesisStageIdx]}
               </motion.p>
             </AnimatePresence>
           </motion.div>
