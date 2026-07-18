@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AiOrb } from "@/components/orb/AiOrb";
+import { VennDiagram } from "@/components/ikigai/VennDiagram";
 import type { IkigaiSynthesis } from "@/types/ikigai";
 import {
   ChevronDown,
@@ -19,8 +20,12 @@ import {
   TrendingUp,
   Compass,
   Flame,
+  Map,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { useResponsiveSize } from "@/lib/useResponsiveSize";
+import { createClient } from "@/lib/supabase/client";
 
 const DIMENSION_CONFIG = [
   { label: "What You Love", Icon: Heart, color: "#f43f5e", bg: "rgba(244,63,94,0.1)", border: "rgba(244,63,94,0.22)" },
@@ -47,9 +52,11 @@ function RevealContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [synthesis, setSynthesis] = useState<IkigaiSynthesis | null>(null);
-  const [phase, setPhase] = useState<"cinematic" | "title" | "expanded">("cinematic");
+  const [phase, setPhase] = useState<"cinematic" | "signin" | "title" | "expanded">("cinematic");
+  const isSignedInRef = useRef<boolean | null>(null);
   const [openDeepDive, setOpenDeepDive] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
   const cinematicOrbSize = useResponsiveSize(120, 160);
   const titleOrbSize = useResponsiveSize(90, 120);
@@ -65,8 +72,28 @@ function RevealContent() {
   }, [searchParams, router]);
 
   useEffect(() => {
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        const signedIn = !!data.user;
+        setIsSignedIn(signedIn);
+        isSignedInRef.current = signedIn;
+      });
+    } catch {
+      setIsSignedIn(false);
+      isSignedInRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
     if (!synthesis) return;
-    const t = setTimeout(() => setPhase("title"), 2800);
+    const t = setTimeout(() => {
+      if (isSignedInRef.current === false) {
+        setPhase("signin");
+      } else {
+        setPhase("title");
+      }
+    }, 2800);
     return () => clearTimeout(t);
   }, [synthesis]);
 
@@ -180,6 +207,62 @@ function RevealContent() {
               >
                 Synthesising your identity...
               </motion.p>
+            </motion.div>
+          )}
+
+          {/* ── Phase 1.5: sign-in gate (only for logged-out users) ── */}
+          {phase === "signin" && (
+            <motion.div
+              key="signin"
+              className="flex flex-col items-center gap-6 w-full max-w-xs text-center px-2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.55, ease: [0.34, 1.2, 0.64, 1] }}
+            >
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.28)" }}
+              >
+                <Sparkles className="w-6 h-6" style={{ color: "#fb923c" }} />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-white/90 leading-tight">Save your results</h2>
+                <p className="text-sm text-white/45 font-light leading-relaxed">
+                  Create a free account to access your profile anytime and track how your Ikigai evolves.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  try { sessionStorage.setItem("ikigai_synthesis", JSON.stringify(synthesis)); } catch { /* ignore */ }
+                  router.push("/auth/login?next=/reveal");
+                }}
+                className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium text-white transition-all touch-manipulation"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  minHeight: 52,
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+                  <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332Z" fill="#FBBC05"/>
+                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </button>
+
+              <button
+                onClick={() => setPhase("title")}
+                className="text-sm text-white/30 hover:text-white/55 transition-colors touch-manipulation py-2"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                Skip for now
+              </button>
             </motion.div>
           )}
 
@@ -353,6 +436,48 @@ function RevealContent() {
                 </div>
               </motion.div>
 
+              {/* ── VENN DIAGRAM ── */}
+              {synthesis.quadrantItems && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="rounded-2xl px-4 py-5 sm:px-6 sm:py-6"
+                  style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
+                >
+                  <VennDiagram quadrantItems={synthesis.quadrantItems} />
+                </motion.div>
+              )}
+
+              {/* ── SEE CAREER PATHS BUTTON ── */}
+              <motion.button
+                onClick={() => {
+                  document.getElementById("career-paths")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl text-sm font-medium text-white transition-all touch-manipulation relative overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(249,115,22,0.18) 0%, rgba(20,184,166,0.14) 100%)",
+                  border: "1px solid rgba(249,115,22,0.32)",
+                  boxShadow: "0 0 32px rgba(249,115,22,0.1), 0 4px 16px rgba(0,0,0,0.2)",
+                  minHeight: 52,
+                  WebkitTapHighlightColor: "transparent",
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }}
+                  animate={{ x: ["-100%", "100%"] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
+                />
+                <Map className="w-4 h-4 shrink-0" style={{ color: "#5eead4" }} />
+                <span>See career paths and transition plan</span>
+                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+              </motion.button>
+
               {/* ── EXPLANATION ── */}
               {synthesis.explanation && (
                 <motion.div
@@ -400,6 +525,69 @@ function RevealContent() {
                   );
                 })}
               </div>
+
+              {/* ── KAMIYA NEEDS ── */}
+              {synthesis.kamiyaNeeds && (synthesis.kamiyaNeeds.met.length > 0 || synthesis.kamiyaNeeds.unmet.length > 0) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.44 }}
+                  className="rounded-2xl p-5 sm:p-6"
+                  style={{
+                    background: "#12121a",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 16,
+                  }}
+                >
+                  <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 mb-4">
+                    What your life is currently giving you
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Met needs */}
+                    {synthesis.kamiyaNeeds.met.length > 0 && (
+                      <div className="space-y-2.5">
+                        <p className="text-[10px] tracking-widest uppercase font-medium mb-3" style={{ color: "#4ecdc4" }}>
+                          Working for you
+                        </p>
+                        {synthesis.kamiyaNeeds.met.map((item, i) => {
+                          const colonIdx = item.indexOf(":");
+                          const needName = colonIdx > -1 ? item.slice(0, colonIdx) : null;
+                          const rest = colonIdx > -1 ? item.slice(colonIdx + 1).trim() : item;
+                          return (
+                            <div key={i} className="flex items-start gap-2.5">
+                              <span className="mt-1 w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[8px]" style={{ background: "rgba(78,205,196,0.15)", border: "1px solid rgba(78,205,196,0.35)", color: "#4ecdc4" }}>✓</span>
+                              <p className="text-xs text-white/55 font-light leading-relaxed">
+                                {needName && <span className="text-white/75 font-medium">{needName}: </span>}{rest}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {/* Unmet needs */}
+                    {synthesis.kamiyaNeeds.unmet.length > 0 && (
+                      <div className="space-y-2.5">
+                        <p className="text-[10px] tracking-widest uppercase font-medium mb-3" style={{ color: "#e8845a" }}>
+                          Not yet satisfied
+                        </p>
+                        {synthesis.kamiyaNeeds.unmet.map((item, i) => {
+                          const colonIdx = item.indexOf(":");
+                          const needName = colonIdx > -1 ? item.slice(0, colonIdx) : null;
+                          const rest = colonIdx > -1 ? item.slice(colonIdx + 1).trim() : item;
+                          return (
+                            <div key={i} className="flex items-start gap-2.5">
+                              <span className="mt-1 w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[8px]" style={{ background: "rgba(232,132,90,0.12)", border: "1px solid rgba(232,132,90,0.3)", color: "#e8845a" }}>○</span>
+                              <p className="text-xs text-white/55 font-light leading-relaxed">
+                                {needName && <span className="text-white/75 font-medium">{needName}: </span>}{rest}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
 
               {/* ── DEEP DIVE ── */}
               {synthesis.deepDive?.length > 0 && (
@@ -472,6 +660,156 @@ function RevealContent() {
                 </motion.div>
               )}
 
+              {/* ── SIDE QUESTS ── */}
+              {synthesis.sideQuests && synthesis.sideQuests.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.52 }}
+                  className="rounded-2xl p-5 sm:p-6 space-y-4"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(168,85,247,0.06), rgba(255,255,255,0.02))",
+                    border: "1px solid rgba(168,85,247,0.2)",
+                    boxShadow: "0 0 28px rgba(168,85,247,0.06)",
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                      <Sparkles className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
+                    </div>
+                    <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#a855f7" }}>Side Quests</p>
+                  </div>
+                  <div className="h-px" style={{ background: "linear-gradient(to right, rgba(168,85,247,0.2), transparent)" }} />
+                  <ul className="space-y-3">
+                    {synthesis.sideQuests.map((quest, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span
+                          className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium"
+                          style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="text-sm text-white/65 font-light leading-relaxed">{quest}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
+
+              {/* ── CAREER TRANSITION ── */}
+              {synthesis.careerTransition && synthesis.careerTransition.steps.length > 0 && (
+                <motion.div
+                  id="career-paths"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.56 }}
+                  className="rounded-2xl p-5 sm:p-6 space-y-4"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(6,182,212,0.06), rgba(255,255,255,0.02))",
+                    border: "1px solid rgba(6,182,212,0.2)",
+                    boxShadow: "0 0 28px rgba(6,182,212,0.06)",
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)" }}>
+                        <Map className="w-3.5 h-3.5" style={{ color: "#06b6d4" }} />
+                      </div>
+                      <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#06b6d4" }}>Your Path Forward</p>
+                    </div>
+                    {synthesis.careerTransition.timeline && (
+                      <span className="text-[10px] text-white/30 font-light tracking-wide">{synthesis.careerTransition.timeline}</span>
+                    )}
+                  </div>
+                  <div className="h-px" style={{ background: "linear-gradient(to right, rgba(6,182,212,0.2), transparent)" }} />
+                  <ol className="space-y-3 relative">
+                    <div className="absolute left-2.5 top-3 bottom-3 w-px" style={{ background: "linear-gradient(to bottom, rgba(6,182,212,0.3), transparent)" }} />
+                    {synthesis.careerTransition.steps.map((step, i) => (
+                      <li key={i} className="flex items-start gap-3 pl-1">
+                        <span
+                          className="shrink-0 mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-medium z-10"
+                          style={{ background: "rgba(6,182,212,0.2)", border: "1px solid rgba(6,182,212,0.4)", color: "#67e8f9" }}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="text-sm text-white/65 font-light leading-relaxed">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </motion.div>
+              )}
+
+              {/* ── PURPOSE & LIFE ADVICE ── */}
+              {synthesis.purposeAdvice && synthesis.purposeAdvice.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="rounded-2xl p-5 sm:p-6 space-y-4"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(245,158,11,0.06), rgba(255,255,255,0.02))",
+                    border: "1px solid rgba(245,158,11,0.2)",
+                    boxShadow: "0 0 28px rgba(245,158,11,0.06)",
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                      <Flame className="w-3.5 h-3.5" style={{ color: "#f59e0b" }} />
+                    </div>
+                    <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#f59e0b" }}>Purpose & Life</p>
+                  </div>
+                  <div className="h-px" style={{ background: "linear-gradient(to right, rgba(245,158,11,0.2), transparent)" }} />
+                  <ul className="space-y-3.5">
+                    {synthesis.purposeAdvice.map((advice, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f59e0b", boxShadow: "0 0 6px #f59e0b" }} />
+                        <span className="text-sm text-white/65 font-light leading-relaxed">{advice}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
+
+              {/* ── SIGN-UP CTA (only if not signed in) ── */}
+              {isSignedIn === false && (
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.64 }}
+                  className="relative rounded-2xl overflow-hidden p-5 sm:p-6 text-center"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(249,115,22,0.1), rgba(20,184,166,0.08))",
+                    border: "1px solid rgba(249,115,22,0.3)",
+                    boxShadow: "0 0 40px rgba(249,115,22,0.08)",
+                  }}
+                >
+                  <div
+                    className="absolute inset-x-0 top-0 h-16 pointer-events-none"
+                    style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(249,115,22,0.08), transparent)" }}
+                  />
+                  <p className="text-[9px] tracking-[0.45em] uppercase text-white/30 mb-3">Don&apos;t lose this</p>
+                  <h3 className="text-base font-medium text-white/90 mb-2">Save your Ikigai profile</h3>
+                  <p className="text-sm text-white/45 font-light mb-5 leading-relaxed">
+                    Create a free account to save your results, come back anytime, and track how your Ikigai evolves.
+                  </p>
+                  <button
+                    onClick={() => router.push("/auth/login?next=/profile")}
+                    className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-medium text-white transition-all touch-manipulation"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(249,115,22,0.35), rgba(249,115,22,0.22))",
+                      border: "1px solid rgba(249,115,22,0.55)",
+                      boxShadow: "0 0 24px rgba(249,115,22,0.18)",
+                      minHeight: 44,
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    <span>Create free account</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <p className="mt-3 text-[10px] text-white/20">No credit card. Takes 30 seconds.</p>
+                </motion.div>
+              )}
+
               {/* ── CTA: Careers ── */}
               <motion.button
                 onClick={handleCareers}
@@ -485,7 +823,7 @@ function RevealContent() {
                 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: 0.7 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
               >
@@ -505,7 +843,7 @@ function RevealContent() {
                 className="flex flex-col sm:flex-row items-center justify-center gap-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.72 }}
+                transition={{ delay: 0.8 }}
               >
                 <button
                   onClick={handleAddContext}

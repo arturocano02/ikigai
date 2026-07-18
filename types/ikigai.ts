@@ -38,6 +38,19 @@ export interface IkigaiSynthesis {
   deepDive: { heading: string; detail: string }[];  // expandable sections
   careerKeywords?: string[];
   jobSearchTerms?: string[];     // simple 1-3 word job titles for actual job board queries
+  sideQuests?: string[];         // concrete actions to start exploring their ikigai
+  careerTransition?: { steps: string[]; timeline: string }; // how to get from current to aligned work
+  purposeAdvice?: string[];      // broader life/purpose advice beyond career
+  quadrantItems?: {
+    love: string[];
+    skill: string[];
+    world: string[];
+    paid: string[];
+  };
+  kamiyaNeeds?: {
+    met: string[];
+    unmet: string[];
+  };
 }
 
 export interface JobMatch {

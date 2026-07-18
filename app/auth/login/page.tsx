@@ -4,7 +4,7 @@ import { useState, Suspense, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Briefcase } from "lucide-react";
 
 function LoginContent() {
   const router = useRouter();
@@ -14,6 +14,9 @@ function LoginContent() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [currentRole, setCurrentRole] = useState("");
+  const [currentChallenge, setCurrentChallenge] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -60,18 +63,27 @@ function LoginContent() {
     setHint(null);
 
     if (mode === "signup") {
+      const userCtx = {
+        ...(age ? { age } : {}),
+        ...(currentRole ? { currentRole } : {}),
+        ...(currentChallenge ? { currentChallenge } : {}),
+      };
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-          data: { gdpr_consent_at: new Date().toISOString() },
+          data: {
+            gdpr_consent_at: new Date().toISOString(),
+            ...userCtx,
+          },
         },
       });
       if (error) {
         setError(error.message);
       } else {
-        setSuccessMsg("Check your inbox — we sent you a confirmation link.");
+        try { localStorage.setItem("ikigai_user_context", JSON.stringify(userCtx)); } catch { /* ignore */ }
+        setSuccessMsg("Check your inbox. We sent you a confirmation link.");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -84,7 +96,7 @@ function LoginContent() {
 
         if (noAccount) {
           setMode("signup");
-          setHint("No account found with that email — fill in a password to create one.");
+          setHint("No account found with that email. Fill in a password to create one.");
           setError(null);
         } else {
           setError(error.message);
@@ -158,7 +170,7 @@ function LoginContent() {
             transition={{ duration: 0.2 }}
           >
             {isSignIn
-              ? "Welcome back — sign in to your account"
+              ? "Welcome back. Sign in to your account."
               : "New here? Create a free account to save your Ikigai"}
           </motion.p>
         </AnimatePresence>
@@ -273,6 +285,68 @@ function LoginContent() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Signup-only context fields */}
+              <AnimatePresence>
+                {!isSignIn && (
+                  <motion.div
+                    className="space-y-3"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <p className="text-[10px] text-white/30 tracking-widest uppercase pt-1">
+                      Help us personalise your Ikigai
+                    </p>
+
+                    {/* Age + Role row */}
+                    <div className="flex gap-2">
+                      <div className="relative w-28 shrink-0">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
+                        <input
+                          type="number"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          placeholder="Age"
+                          min={13}
+                          max={120}
+                          className="w-full bg-white/[0.05] border border-white/10 rounded-xl pl-9 pr-3 py-3.5 text-sm text-white placeholder-white/25 outline-none transition-all"
+                          style={{ minHeight: 48 }}
+                          onFocus={(e) => (e.target.style.borderColor = "rgba(249,115,22,0.5)")}
+                          onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                        />
+                      </div>
+                      <div className="relative flex-1">
+                        <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={currentRole}
+                          onChange={(e) => setCurrentRole(e.target.value)}
+                          placeholder="Student / Engineer / ..."
+                          className="w-full bg-white/[0.05] border border-white/10 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white placeholder-white/25 outline-none transition-all"
+                          style={{ minHeight: 48 }}
+                          onFocus={(e) => (e.target.style.borderColor = "rgba(249,115,22,0.5)")}
+                          onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Current challenge */}
+                    <input
+                      type="text"
+                      value={currentChallenge}
+                      onChange={(e) => setCurrentChallenge(e.target.value)}
+                      placeholder="What's the one thing you're trying to figure out?"
+                      maxLength={200}
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-white/25 outline-none transition-all"
+                      style={{ minHeight: 48 }}
+                      onFocus={(e) => (e.target.style.borderColor = "rgba(249,115,22,0.5)")}
+                      onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Error */}
               <AnimatePresence>

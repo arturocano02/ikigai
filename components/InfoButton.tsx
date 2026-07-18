@@ -15,7 +15,7 @@ const STEPS = [
   {
     num: "1",
     title: "Have a conversation",
-    body: "Answer honestly — even rough answers work. No right or wrong.",
+    body: "Answer honestly. Even rough answers work. No right or wrong.",
   },
   {
     num: "2",
@@ -30,7 +30,7 @@ const STEPS = [
   {
     num: "4",
     title: "Reveal your Ikigai",
-    body: "Get a full written analysis — your purpose, strengths, and path forward.",
+    body: "Get a full written analysis: your purpose, strengths, and path forward.",
   },
 ];
 
@@ -96,7 +96,7 @@ export default function InfoButton() {
                 </button>
                 <p className="text-[10px] text-white/30 tracking-[0.2em] uppercase mb-1">What is</p>
                 <h2 className="text-white/90 font-light text-xl tracking-wide">Ikigai</h2>
-                <p className="text-xs text-white/40 font-light mt-0.5">Japanese concept — <em>reason for being</em></p>
+                <p className="text-xs text-white/40 font-light mt-0.5">Japanese concept, <em>reason for being</em></p>
               </div>
 
               {/* 4 circles */}

@@ -43,6 +43,10 @@ Explore widely — don't tunnel on one dimension:
 - The best Ikigai insights come from unexpected angles. Ask about specific moments, specific people, specific places.
 - Don't stick rigidly to one dimension until it's "done" — weave between them naturally. A question about a hobby might reveal something about skills; a frustration might reveal something about purpose.
 - Push them to talk about different aspects of their life: creative work, analytical work, physical work, social dynamics, learning, making things, fixing things, leading, following
+- At a natural moment, surface what's actually holding them back: "What's stopped you from pursuing that?" or "Have you tried going in that direction before?"
+- Find out what they've already attempted: "Have you tried anything like this before — what happened?" This tells you if they're early in figuring it out or stuck after real attempts.
+- If they mention being stuck or uncertain, dig into it — that tension is often the most useful signal about what they actually want.
+- Around question 4 or 5, ask about their current job casually and naturally. Good example: "What does your day-to-day actually look like right now - like what do you get paid to do?" Do not make it sound like a form field. Weave it in naturally based on what they've said.
 
 If they go off-topic, ask something random, or seem confused:
 - Answer briefly and honestly, then steer back with a natural question
@@ -168,11 +172,12 @@ Known insights:
   // Detect and strip the exploration exit signal
   const exitExploration = /\[EXIT_EXPLORATION\]/i.test(rawText);
 
-  // Clean the response text — strip complete blocks, partial blocks, and exit token
+  // Clean the response text: strip blocks, exit token, and em-dashes
   const cleanResponse = rawText
     .replace(/<ikigai_update>[\s\S]*?<\/ikigai_update>/g, "")
     .replace(/<ikigai_update>[\s\S]*$/g, "")
     .replace(/\[EXIT_EXPLORATION\]/gi, "")
+    .replace(/—/g, " - ")
     .trim();
 
   return NextResponse.json({
