@@ -65,8 +65,9 @@ export default function ConversationPage() {
 
   const isResume = !!resumeSession;
 
-  const [convLength, setConvLength] = useState<ConvLength>("medium");
-  const { state: ikigai, sendMessage, triggerSynthesis } = useIkigai(convLength, resumeSession);
+  const [convLength, setConvLength] = useState<ConvLength>("short");
+  const [language, setLanguage] = useState<"en" | "es">("en");
+  const { state: ikigai, sendMessage, triggerSynthesis } = useIkigai(convLength, resumeSession, language);
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [currentText, setCurrentText] = useState("");
   const [hasStarted, setHasStarted] = useState(false);
@@ -165,6 +166,7 @@ export default function ConversationPage() {
 
   function beginWithCountdown() {
     if (audioUnlocked || countdown !== null) return;
+    try { sessionStorage.setItem("ikigai_language", language); } catch { /* ignore */ }
     setCountdown(3);
   }
 
@@ -278,25 +280,54 @@ export default function ConversationPage() {
               {isResume ? (
                 <p className="text-xs text-white/40 tracking-widest uppercase">Continuing your session</p>
               ) : (
-                <div className="flex items-center gap-2">
-                  {(["ultra", "short", "medium", "long"] as ConvLength[]).map((opt) => {
-                    const active = convLength === opt;
-                    return (
-                      <button key={opt} onClick={() => setConvLength(opt)}
-                        className="flex flex-col items-center px-3 py-2.5 rounded-xl text-xs transition-all touch-manipulation"
-                        style={{
-                          border: active ? "1px solid rgba(249,115,22,0.6)" : "1px solid rgba(255,255,255,0.08)",
-                          background: active ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.03)",
-                          color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
-                          minHeight: 52, minWidth: 64,
-                          WebkitTapHighlightColor: "transparent",
-                        }}
-                      >
-                        <span className="font-medium tracking-wide">{LENGTH_META[opt].label}</span>
-                        <span className="mt-0.5 text-[10px] opacity-60">{LENGTH_META[opt].desc}</span>
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-col items-center gap-3">
+                  {/* Length picker */}
+                  <div className="flex items-center gap-2">
+                    {(["ultra", "short", "medium", "long"] as ConvLength[]).map((opt) => {
+                      const active = convLength === opt;
+                      return (
+                        <button key={opt} onClick={() => setConvLength(opt)}
+                          className="flex flex-col items-center px-3 py-2.5 rounded-xl text-xs transition-all touch-manipulation"
+                          style={{
+                            border: active ? "1px solid rgba(249,115,22,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                            background: active ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.03)",
+                            color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+                            minHeight: 52, minWidth: 64,
+                            WebkitTapHighlightColor: "transparent",
+                          }}
+                        >
+                          <span className="font-medium tracking-wide">{LENGTH_META[opt].label}</span>
+                          <span className="mt-0.5 text-[10px] opacity-60">{LENGTH_META[opt].desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Language picker */}
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[10px] text-white/20 tracking-widest uppercase mr-1">Language</p>
+                    {([
+                      { code: "en" as const, label: "English", flag: "🇬🇧" },
+                      { code: "es" as const, label: "Español", flag: "🇪🇸" },
+                    ]).map(({ code, label, flag }) => {
+                      const active = language === code;
+                      return (
+                        <button key={code} onClick={() => setLanguage(code)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs transition-all touch-manipulation"
+                          style={{
+                            border: active ? "1px solid rgba(249,115,22,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                            background: active ? "rgba(249,115,22,0.12)" : "rgba(255,255,255,0.03)",
+                            color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+                            minHeight: 38,
+                            WebkitTapHighlightColor: "transparent",
+                          }}
+                        >
+                          <span>{flag}</span>
+                          <span className="font-medium">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -319,10 +350,11 @@ export default function ConversationPage() {
         <AnimatePresence>
           {countdown !== null && (
             <motion.div
-              className="mt-8 flex flex-col items-center gap-3"
+              className="mt-8 flex flex-col items-center gap-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
               <AnimatePresence mode="wait">
                 <motion.span
@@ -330,31 +362,24 @@ export default function ConversationPage() {
                   className="text-8xl font-extralight tabular-nums select-none"
                   style={{
                     color: "rgba(255,255,255,0.9)",
-                    textShadow: "0 0 60px rgba(249,115,22,0.6), 0 0 20px rgba(249,115,22,0.4)",
+                    textShadow: "0 0 60px rgba(249,115,22,0.5), 0 0 20px rgba(249,115,22,0.3)",
                   }}
-                  initial={{ opacity: 0, scale: 1.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.4 }}
-                  transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
                 >
                   {countdown}
                 </motion.span>
               </AnimatePresence>
-              <motion.p
-                className="text-xs text-white/30 tracking-[0.3em] uppercase"
-                animate={{ opacity: [0.3, 0.7, 0.3] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                Get ready...
-              </motion.p>
-              <motion.p
-                className="text-[11px] text-white/22 text-center max-w-[200px] leading-relaxed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                Tap the mic on &amp; off as you speak — it helps the conversation flow better
-              </motion.p>
+              <p className="text-xs text-white/30 tracking-[0.3em] uppercase">
+                {language === "es" ? "Prepárate..." : "Get ready..."}
+              </p>
+              <p className="text-[11px] text-white/20 font-light text-center max-w-[200px] leading-relaxed">
+                {language === "es"
+                  ? "Tip: silenciarte cuando termines de hablar ayuda a la IA a entenderte mejor"
+                  : "Tip: muting yourself when you finish speaking helps the AI understand you better"}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -395,7 +420,7 @@ export default function ConversationPage() {
             <motion.div className="mt-3 w-full max-w-xs sm:max-w-sm text-center px-2"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             >
-              <p className="text-xs text-white/30 font-light italic line-clamp-2">
+              <p className="text-xs text-white/30 font-light italic leading-relaxed break-words whitespace-pre-wrap">
                 &ldquo;{voice.state.transcript}&rdquo;
               </p>
             </motion.div>

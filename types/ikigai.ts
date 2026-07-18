@@ -69,8 +69,9 @@ export interface IkigaiSynthesis {
     unmet: string[];
   };
   ikigaiScore?: {
-    score: number;       // 0-100, how much they are currently living their Ikigai
-    reasoning: string;   // 2-3 sentences explaining the score, referencing specifics
+    score: number;       // 0-100
+    reasoning: string;   // 1 short sentence, shown inline
+    detail?: string;     // 2-3 sentence deep dive, shown in popup
   };
   /** @deprecated use careerPaths */
   careerTransition?: { steps: string[]; timeline: string };

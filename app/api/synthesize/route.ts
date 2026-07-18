@@ -9,12 +9,17 @@ function cleanDashes(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { insights, messages, userContext } = await req.json() as {
+  const { insights, messages, userContext, language = "en" } = await req.json() as {
     progress: Record<IkigaiDimension, number>;
     insights: Record<IkigaiDimension, string[]>;
     messages: ConversationMessage[];
     userContext?: { age?: string; currentRole?: string; currentChallenge?: string };
+    language?: "en" | "es";
   };
+
+  const SPANISH_PREFIX = language === "es"
+    ? "INSTRUCCIÓN CRÍTICA: Escribe TODO el output en español de España. Los valores JSON deben estar en español. Las claves JSON se quedan en inglés. Usa un español natural, directo y conversacional. NO mezcles idiomas.\n\n"
+    : "";
 
   const conversationSummary = messages
     .slice(-30)
@@ -36,7 +41,7 @@ Paid insights: ${insights.paid.join(", ")}
       ].filter(Boolean).join("\n")}\n`
     : "";
 
-  const prompt = `Based on this Ikigai discovery conversation, synthesize a brutally honest, deeply personal Ikigai profile.
+  const prompt = `${SPANISH_PREFIX}Based on this Ikigai discovery conversation, synthesize a brutally honest, deeply personal Ikigai profile.
 ${userContextBlock}
 CONVERSATION:
 ${conversationSummary}
@@ -118,7 +123,7 @@ Return a JSON object with this exact structure (no markdown, raw JSON only):
     {
       "title": "Path title - evocative 2-4 words (e.g. 'The Builder', 'The Quiet Expert', 'The Bridge')",
       "tagline": "One sentence describing this future and why it fits them specifically.",
-      "timeline": "e.g. '12-18 months' or '2-3 years'",
+      "timeline": "X years or X-Y years ONLY. No months, no sentences. Examples: '1 year', '2-3 years', '3 years'.",
       "milestones": [
         { "period": "Month 1-3", "action": "Concrete first step, specific to their situation" },
         { "period": "Month 3-6", "action": "Next concrete step" },
@@ -155,7 +160,7 @@ Return a JSON object with this exact structure (no markdown, raw JSON only):
     {
       "title": "Fourth path - the bold bet",
       "tagline": "...",
-      "timeline": "3-5 years",
+      "timeline": "3-5 years ONLY. No sentences.",
       "milestones": [
         { "period": "Now", "action": "..." },
         { "period": "6 months", "action": "..." },
@@ -171,8 +176,9 @@ Return a JSON object with this exact structure (no markdown, raw JSON only):
     "A third. Possibly the most important one they need to hear."
   ],
   "ikigaiScore": {
-    "score": "Integer 0-100. How much are they currently living their Ikigai, right now, today? Be honest and calibrated. Someone in a soul-crushing job they hate with no side projects: 15-25. Someone doing meaningful work but underpaid and unfulfilled: 40-55. Someone mostly aligned but missing one element: 60-75. Someone genuinely living it: 80+. Most people score 25-60. Do not be generous.",
-    "reasoning": "2-3 sentences explaining exactly why you gave that score. Reference specific things they said. Call out what's already aligned AND what concrete gap is keeping the number from being higher. Be direct — this should feel like an honest friend, not a life coach."
+    "score": "Integer 0-100. Be honest. Soul-crushing job, no side projects: 15-25. Meaningful work but underpaid/unfulfilled: 40-55. Mostly aligned, missing one element: 60-75. Genuinely living it: 80+. Most people: 25-60. Do not be generous.",
+    "reasoning": "One sentence, max 12 words. The single biggest reason for this score. e.g. 'You love the work but the money is still missing.'",
+    "detail": "2-3 sentences. What's already aligned, what gap is keeping the score from being higher, and what would change the number most. Reference specific things they said. Direct, not preachy."
   }
 }
 

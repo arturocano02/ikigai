@@ -31,7 +31,8 @@ const makeInitialInsights = (): Record<IkigaiDimension, string[]> => ({
 
 export function useIkigai(
   length: "ultra" | "short" | "medium" | "long" = "medium",
-  initialSession?: SavedSession
+  initialSession?: SavedSession,
+  language: "en" | "es" = "en"
 ) {
   const completeThreshold = length === "ultra" ? 40 : length === "short" ? 60 : length === "medium" ? 75 : 85;
 
@@ -70,7 +71,7 @@ export function useIkigai(
       const res = await fetch("/api/synthesize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progress, insights, messages, userContext }),
+        body: JSON.stringify({ progress, insights, messages, userContext, language }),
       });
 
       const data = await res.json();
@@ -122,6 +123,7 @@ export function useIkigai(
           currentFocus: focusRef.current,
           length,
           explorationMode,
+          language,
         }),
         signal: abort.signal,
       });
