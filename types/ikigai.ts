@@ -38,19 +38,42 @@ export interface IkigaiSynthesis {
   deepDive: { heading: string; detail: string }[];  // expandable sections
   careerKeywords?: string[];
   jobSearchTerms?: string[];     // simple 1-3 word job titles for actual job board queries
-  sideQuests?: string[];         // concrete actions to start exploring their ikigai
-  careerTransition?: { steps: string[]; timeline: string }; // how to get from current to aligned work
-  purposeAdvice?: string[];      // broader life/purpose advice beyond career
+  sideQuests?: string[];
+  purposeAdvice?: string[];
   quadrantItems?: {
     love: string[];
     skill: string[];
     world: string[];
     paid: string[];
   };
+  vennDetails?: {
+    love: string[];
+    skill: string[];
+    world: string[];
+    paid: string[];
+    passion: string[];
+    mission: string[];
+    profession: string[];
+    vocation: string[];
+    ikigai: string[];
+  };
+  careerPaths?: Array<{
+    title: string;
+    tagline: string;
+    timeline: string;
+    milestones: Array<{ period: string; action: string }>;
+    searchTerms?: string[];
+  }>;
   kamiyaNeeds?: {
     met: string[];
     unmet: string[];
   };
+  ikigaiScore?: {
+    score: number;       // 0-100, how much they are currently living their Ikigai
+    reasoning: string;   // 2-3 sentences explaining the score, referencing specifics
+  };
+  /** @deprecated use careerPaths */
+  careerTransition?: { steps: string[]; timeline: string };
 }
 
 export interface JobMatch {

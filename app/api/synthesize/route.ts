@@ -97,26 +97,83 @@ Return a JSON object with this exact structure (no markdown, raw JSON only):
       "Name one of the 7 needs and explain in one sentence why it is not currently being met. e.g. 'Influence: the work you do does not feel necessary to the people around you.'"
     ]
   },
+  "vennDetails": {
+    "love": ["2-4 specific bullet points about what this person truly loves, drawn from the conversation. Full sentences, emotionally resonant."],
+    "skill": ["2-4 bullet points about their real natural strengths, with examples where possible."],
+    "world": ["2-4 bullet points about what the world actually needs from them specifically."],
+    "paid": ["2-4 bullet points about what they can realistically be paid for and why the market values it."],
+    "passion": ["2-3 sentences explaining what their PASSION is - the overlap of love and skill. What does it look like when they're in flow?"],
+    "mission": ["2-3 sentences on their MISSION - how their love and what the world needs intersect. What cause are they here to serve?"],
+    "profession": ["2-3 sentences on their PROFESSION - where their skills meet what people pay for. What's the professional expression of this?"],
+    "vocation": ["2-3 sentences on their VOCATION - where world needs and getting paid connect. What role do they fill for others?"],
+    "ikigai": ["3-4 bullet points explaining WHY this specific title is their Ikigai. Reference things they said. Make it feel earned, not assigned."]
+  },
   "sideQuests": [
     "Specific, concrete action they can take this week or month to start living their Ikigai. Not advice, an actual thing to do. e.g. 'Reach out to one person doing the work you described and ask for 20 minutes'",
     "Another concrete side quest",
     "A third, slightly bolder",
     "A fourth that tests the edges of their comfort zone"
   ],
-  "careerTransition": {
-    "steps": [
-      "Concrete step 1, specific to their current situation and where they want to go",
-      "Step 2",
-      "Step 3",
-      "Step 4. The one most people skip."
-    ],
-    "timeline": "Realistic timeframe e.g. '6-18 months depending on how fast you move'"
-  },
+  "careerPaths": [
+    {
+      "title": "Path title - evocative 2-4 words (e.g. 'The Builder', 'The Quiet Expert', 'The Bridge')",
+      "tagline": "One sentence describing this future and why it fits them specifically.",
+      "timeline": "e.g. '12-18 months' or '2-3 years'",
+      "milestones": [
+        { "period": "Month 1-3", "action": "Concrete first step, specific to their situation" },
+        { "period": "Month 3-6", "action": "Next concrete step" },
+        { "period": "Year 1", "action": "What they should have achieved by now" },
+        { "period": "Year 2", "action": "Where the path leads" },
+        { "period": "Year 3+", "action": "The long-term vision for this path" }
+      ],
+      "searchTerms": ["job title 1", "job title 2"]
+    },
+    {
+      "title": "Second path - meaningfully different from the first",
+      "tagline": "...",
+      "timeline": "...",
+      "milestones": [
+        { "period": "Month 1-3", "action": "..." },
+        { "period": "Month 6-12", "action": "..." },
+        { "period": "Year 1-2", "action": "..." },
+        { "period": "Year 3+", "action": "..." }
+      ],
+      "searchTerms": ["job title 1", "job title 2"]
+    },
+    {
+      "title": "Third path - the unconventional one",
+      "tagline": "...",
+      "timeline": "...",
+      "milestones": [
+        { "period": "Month 1", "action": "..." },
+        { "period": "Month 3-6", "action": "..." },
+        { "period": "Year 1", "action": "..." },
+        { "period": "Year 2+", "action": "..." }
+      ],
+      "searchTerms": ["job title 1"]
+    },
+    {
+      "title": "Fourth path - the bold bet",
+      "tagline": "...",
+      "timeline": "3-5 years",
+      "milestones": [
+        { "period": "Now", "action": "..." },
+        { "period": "6 months", "action": "..." },
+        { "period": "Year 1-2", "action": "..." },
+        { "period": "Year 3-5", "action": "..." }
+      ],
+      "searchTerms": ["job title 1"]
+    }
+  ],
   "purposeAdvice": [
     "Piece of life/purpose advice specific to them. Not career advice, broader. The kind of thing a mentor who knew them well would say.",
     "Another one. Can be about relationships, habits, mindset.",
     "A third. Possibly the most important one they need to hear."
-  ]
+  ],
+  "ikigaiScore": {
+    "score": "Integer 0-100. How much are they currently living their Ikigai, right now, today? Be honest and calibrated. Someone in a soul-crushing job they hate with no side projects: 15-25. Someone doing meaningful work but underpaid and unfulfilled: 40-55. Someone mostly aligned but missing one element: 60-75. Someone genuinely living it: 80+. Most people score 25-60. Do not be generous.",
+    "reasoning": "2-3 sentences explaining exactly why you gave that score. Reference specific things they said. Call out what's already aligned AND what concrete gap is keeping the number from being higher. Be direct — this should feel like an honest friend, not a life coach."
+  }
 }
 
 jobSearchTerms: 3-5 simple, standard job titles (1-3 words each) that a mainstream job board like LinkedIn or Indeed would actually return results for. NOT creative phrases - real job titles (e.g. "software engineer", "product manager", "UX designer", "musician", "marketing manager"). These are used to query real job APIs.
@@ -126,15 +183,16 @@ deepDive headings: Intriguing, personal, slightly provocative. Like "The contrad
 
 EVERY list item (patterns, strengths, idealEnvironments, motivations) must be a single short phrase, max ~8 words. No run-on sentences. These render as scannable bullet points, not prose - keep them tight and punchy.
 
-quadrantItems: Short phrases only. 3-5 words max each. These appear inside the Ikigai Venn diagram.
-kamiyaNeeds: 2-4 met needs and 2-4 unmet needs. Be selective. Only include the most meaningful ones.
-sideQuests: Real, doable actions. Not "find your passion" or "try new things". Specific things they can actually do.
-careerTransition: Reference their current role/situation if known. Steps should be honest about what is hard, not just optimistic.
+quadrantItems: Short phrases only. 3-5 words max each. These appear as labels inside the Ikigai Venn diagram circles.
+vennDetails: This is what appears when users TAP each area of the Venn diagram. Make it genuinely illuminating - the kind of thing that makes someone stop and say "that's exactly right". Full sentences for passion/mission/profession/vocation/ikigai. Bullet points for the 4 circles.
+careerPaths: MUST be 4 genuinely different futures - not variations of the same idea. One should be conventional, one creative, one entrepreneurial, one bold/risky. Each must feel tailor-made for THIS person, referencing specifics from the conversation. The milestones should be honest about what is hard, not just optimistic.
+kamiyaNeeds: 2-4 met needs and 2-4 unmet needs. Be selective.
+sideQuests: Real, doable actions. Not "find your passion". Specific things to actually do.
 purposeAdvice: Not about jobs. About how to live. Direct. Not preachy.`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2800,
+    max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -148,10 +206,14 @@ purposeAdvice: Not about jobs. About how to live. Direct. Not preachy.`;
     if (!synthesis.deepDive) synthesis.deepDive = [];
     if (!synthesis.jobSearchTerms) synthesis.jobSearchTerms = synthesis.careerKeywords?.slice(0, 3) || [];
     if (!synthesis.sideQuests) synthesis.sideQuests = [];
-    if (!synthesis.careerTransition) synthesis.careerTransition = { steps: [], timeline: "" };
     if (!synthesis.purposeAdvice) synthesis.purposeAdvice = [];
     if (!synthesis.quadrantItems) synthesis.quadrantItems = { love: [], skill: [], world: [], paid: [] };
+    if (!synthesis.vennDetails) synthesis.vennDetails = null;
+    if (!synthesis.careerPaths) synthesis.careerPaths = [];
     if (!synthesis.kamiyaNeeds) synthesis.kamiyaNeeds = { met: [], unmet: [] };
+    if (synthesis.ikigaiScore) {
+      synthesis.ikigaiScore.score = Math.min(100, Math.max(0, Math.round(Number(synthesis.ikigaiScore.score))));
+    }
     return NextResponse.json(synthesis);
   } catch {
     return NextResponse.json(
@@ -169,6 +231,8 @@ purposeAdvice: Not about jobs. About how to live. Direct. Not preachy.`;
         ],
         careerKeywords: ["meaningful work", "creative problem solving"],
         quadrantItems: { love: [], skill: [], world: [], paid: [] },
+        vennDetails: null,
+        careerPaths: [],
         kamiyaNeeds: { met: [], unmet: [] },
       },
       { status: 200 }

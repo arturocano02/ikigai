@@ -228,9 +228,15 @@ function RevealContent() {
               </div>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   try { sessionStorage.setItem("ikigai_synthesis", JSON.stringify(synthesis)); } catch { /* ignore */ }
-                  router.push("/auth/login?next=/reveal");
+                  try {
+                    const supabase = createClient();
+                    await supabase.auth.signInWithOAuth({
+                      provider: "google",
+                      options: { redirectTo: `${window.location.origin}/auth/callback?next=/profile` },
+                    });
+                  } catch { router.push("/auth/login?next=/profile"); }
                 }}
                 className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium text-white transition-all touch-manipulation"
                 style={{
@@ -372,16 +378,21 @@ function RevealContent() {
                   </h1>
 
                   {/* Subtitle */}
-                  <p className="text-sm sm:text-base text-white/55 font-light leading-relaxed mb-6 max-w-sm mx-auto">
+                  <p className="text-sm sm:text-base text-white/55 font-light leading-relaxed mb-5 max-w-sm mx-auto">
                     {synthesis.subtitle}
                   </p>
 
+                  {/* Ikigai Score */}
+                  {synthesis.ikigaiScore != null && (
+                    <IkigaiScoreRing score={synthesis.ikigaiScore.score} reasoning={synthesis.ikigaiScore.reasoning} />
+                  )}
+
                   {/* Dimension tags */}
-                  <div className="flex flex-wrap justify-center gap-2 mb-5">
+                  <div className="flex flex-wrap justify-center gap-2 mb-4">
                     {DIMENSION_CONFIG.map(({ label, Icon, color, bg, border }) => (
                       <div
                         key={label}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-light tracking-wide"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-light tracking-wide"
                         style={{ background: bg, border: `1px solid ${border}`, color }}
                       >
                         <Icon className="w-2.5 h-2.5 shrink-0" />
@@ -389,27 +400,6 @@ function RevealContent() {
                       </div>
                     ))}
                   </div>
-
-                  {/* Highlight chips */}
-                  {synthesis.highlights?.length > 0 && (
-                    <div className="flex flex-wrap justify-center gap-2 mb-6">
-                      {synthesis.highlights.map((h, i) => {
-                        const c = HIGHLIGHT_COLORS[i % HIGHLIGHT_COLORS.length];
-                        return (
-                          <motion.span
-                            key={i}
-                            className="px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide"
-                            style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color }}
-                            initial={{ opacity: 0, scale: 0.82 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.25 + i * 0.07 }}
-                          >
-                            {h}
-                          </motion.span>
-                        );
-                      })}
-                    </div>
-                  )}
 
                   {/* Footer: branding + share */}
                   <div
@@ -438,65 +428,7 @@ function RevealContent() {
                   className="rounded-2xl px-4 py-5 sm:px-6 sm:py-6"
                   style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
                 >
-                  <VennDiagram quadrantItems={synthesis.quadrantItems} />
-                </motion.div>
-              )}
-
-              {/* ── SEE CAREER PATHS BUTTON ── */}
-              <motion.button
-                onClick={() => {
-                  document.getElementById("career-paths")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl text-sm font-medium text-white transition-all touch-manipulation relative overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, rgba(249,115,22,0.18) 0%, rgba(20,184,166,0.14) 100%)",
-                  border: "1px solid rgba(249,115,22,0.32)",
-                  boxShadow: "0 0 32px rgba(249,115,22,0.1), 0 4px 16px rgba(0,0,0,0.2)",
-                  minHeight: 52,
-                  WebkitTapHighlightColor: "transparent",
-                }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <motion.div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }}
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
-                />
-                <Map className="w-4 h-4 shrink-0" style={{ color: "#5eead4" }} />
-                <span>See career paths and transition plan</span>
-                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
-              </motion.button>
-
-              {/* ── EXPLANATION ── */}
-              {synthesis.explanation && (
-                <motion.div
-                  className="glass rounded-2xl px-6 py-5 sm:px-7 sm:py-6"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.14 }}
-                  style={{ border: "1px solid rgba(255,255,255,0.07)" }}
-                >
-                  <div className="flex gap-4">
-                    <div
-                      className="shrink-0 w-0.5 rounded-full self-stretch"
-                      style={{
-                        background: "linear-gradient(180deg, rgba(249,115,22,0.65), rgba(20,184,166,0.55), rgba(6,182,212,0.3), transparent)",
-                        minHeight: 48,
-                      }}
-                    />
-                    <div className="space-y-3">
-                      {synthesis.explanation
-                        .split(/\n\n+/)
-                        .filter(Boolean)
-                        .map((para, i) => (
-                          <p key={i} className="text-[15px] text-white/72 font-light leading-[1.75]">{para}</p>
-                        ))}
-                    </div>
-                  </div>
+                  <VennDiagram quadrantItems={synthesis.quadrantItems} vennDetails={synthesis.vennDetails} />
                 </motion.div>
               )}
 
@@ -686,50 +618,31 @@ function RevealContent() {
                       </li>
                     ))}
                   </ul>
+                  {/* City button */}
+                  <button
+                    onClick={() => {
+                      try { sessionStorage.setItem("ikigai_synthesis", JSON.stringify(synthesis)); } catch { /* ignore */ }
+                      router.push("/activities");
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-medium tracking-wide touch-manipulation transition-colors"
+                    style={{
+                      background: "rgba(168,85,247,0.1)",
+                      border: "1px solid rgba(168,85,247,0.25)",
+                      color: "#c084fc",
+                      minHeight: 44,
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Find side quests in my city
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                  </button>
                 </motion.div>
               )}
 
-              {/* ── CAREER TRANSITION ── */}
-              {synthesis.careerTransition && synthesis.careerTransition.steps.length > 0 && (
-                <motion.div
-                  id="career-paths"
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.56 }}
-                  className="rounded-2xl p-5 sm:p-6 space-y-4"
-                  style={{
-                    background: "linear-gradient(145deg, rgba(6,182,212,0.06), rgba(255,255,255,0.02))",
-                    border: "1px solid rgba(6,182,212,0.2)",
-                    boxShadow: "0 0 28px rgba(6,182,212,0.06)",
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)" }}>
-                        <Map className="w-3.5 h-3.5" style={{ color: "#06b6d4" }} />
-                      </div>
-                      <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#06b6d4" }}>Your Path Forward</p>
-                    </div>
-                    {synthesis.careerTransition.timeline && (
-                      <span className="text-[10px] text-white/30 font-light tracking-wide">{synthesis.careerTransition.timeline}</span>
-                    )}
-                  </div>
-                  <div className="h-px" style={{ background: "linear-gradient(to right, rgba(6,182,212,0.2), transparent)" }} />
-                  <ol className="space-y-3 relative">
-                    <div className="absolute left-2.5 top-3 bottom-3 w-px" style={{ background: "linear-gradient(to bottom, rgba(6,182,212,0.3), transparent)" }} />
-                    {synthesis.careerTransition.steps.map((step, i) => (
-                      <li key={i} className="flex items-start gap-3 pl-1">
-                        <span
-                          className="shrink-0 mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-medium z-10"
-                          style={{ background: "rgba(6,182,212,0.2)", border: "1px solid rgba(6,182,212,0.4)", color: "#67e8f9" }}
-                        >
-                          {i + 1}
-                        </span>
-                        <span className="text-sm text-white/65 font-light leading-relaxed">{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </motion.div>
+              {/* ── POTENTIAL FUTURES (4 career paths) ── */}
+              {synthesis.careerPaths && synthesis.careerPaths.length > 0 && (
+                <CareerPathsSection paths={synthesis.careerPaths} onJobSearch={handleCareers} />
               )}
 
               {/* ── PURPOSE & LIFE ADVICE ── */}
@@ -760,6 +673,33 @@ function RevealContent() {
                       </li>
                     ))}
                   </ul>
+                </motion.div>
+              )}
+
+              {/* ── YOUR STORY (deep read, moved to bottom) ── */}
+              {synthesis.explanation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.62 }}
+                  className="rounded-2xl p-5 sm:p-6"
+                  style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.015)" }}
+                >
+                  <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 mb-4">The full picture</p>
+                  <div className="flex gap-4">
+                    <div
+                      className="shrink-0 w-0.5 rounded-full self-stretch"
+                      style={{
+                        background: "linear-gradient(180deg, rgba(249,115,22,0.5), rgba(20,184,166,0.4), transparent)",
+                        minHeight: 48,
+                      }}
+                    />
+                    <div className="space-y-3.5">
+                      {synthesis.explanation.split(/\n\n+/).filter(Boolean).map((para, i) => (
+                        <p key={i} className="text-[14px] text-white/55 font-light leading-[1.8]">{para}</p>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -862,6 +802,199 @@ function RevealContent() {
         </AnimatePresence>
       </div>
     </main>
+  );
+}
+
+function CareerPathsSection({
+  paths,
+  onJobSearch,
+}: {
+  paths: NonNullable<import("@/types/ikigai").IkigaiSynthesis["careerPaths"]>;
+  onJobSearch: () => void;
+}) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const PATH_COLORS = ["#06b6d4", "#a855f7", "#f97316", "#10b981"];
+
+  return (
+    <motion.div
+      id="career-paths"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.56 }}
+      className="space-y-3"
+    >
+      <div className="flex items-center gap-2.5 px-1">
+        <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)" }}>
+          <Map className="w-3.5 h-3.5" style={{ color: "#06b6d4" }} />
+        </div>
+        <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#06b6d4" }}>Potential Futures</p>
+      </div>
+
+      {paths.map((path, idx) => {
+        const color = PATH_COLORS[idx % PATH_COLORS.length];
+        const isOpen = openIdx === idx;
+        return (
+          <div
+            key={idx}
+            className="rounded-2xl overflow-hidden transition-all"
+            style={{
+              background: isOpen ? `rgba(${color === "#06b6d4" ? "6,182,212" : color === "#a855f7" ? "168,85,247" : color === "#f97316" ? "249,115,22" : "16,185,129"},0.05)` : "rgba(255,255,255,0.025)",
+              border: `1px solid ${isOpen ? color + "35" : "rgba(255,255,255,0.07)"}`,
+            }}
+          >
+            {/* Header row — always visible */}
+            <button
+              className="w-full flex items-start gap-3.5 px-5 py-4 text-left touch-manipulation"
+              style={{ WebkitTapHighlightColor: "transparent", minHeight: 64 }}
+              onClick={() => setOpenIdx(isOpen ? null : idx)}
+            >
+              <span
+                className="shrink-0 mt-0.5 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold"
+                style={{ background: color + "22", border: `1px solid ${color}55`, color }}
+              >
+                {idx + 1}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white/85 leading-snug mb-0.5">{path.title}</p>
+                <p className="text-xs text-white/40 font-light leading-relaxed line-clamp-2">{path.tagline}</p>
+              </div>
+              <div className="shrink-0 flex flex-col items-end gap-1.5 ml-2">
+                {path.timeline && (
+                  <span className="text-[9px] font-light tracking-wide whitespace-nowrap" style={{ color, opacity: 0.7 }}>
+                    {path.timeline}
+                  </span>
+                )}
+                <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }}>
+                  <ChevronDown className="w-4 h-4 text-white/25" />
+                </motion.div>
+              </div>
+            </button>
+
+            {/* Expanded milestones */}
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-5 pb-5 pt-1" style={{ borderTop: `1px solid ${color}18` }}>
+                    {/* Timeline milestones */}
+                    <ol className="relative space-y-3.5 mb-5">
+                      <div
+                        className="absolute left-[11px] top-3 bottom-3 w-px"
+                        style={{ background: `linear-gradient(to bottom, ${color}55, transparent)` }}
+                      />
+                      {path.milestones.map((m, mi) => (
+                        <li key={mi} className="flex items-start gap-3 pl-1">
+                          <span
+                            className="shrink-0 mt-0.5 w-[22px] h-[22px] rounded-full flex items-center justify-center z-10"
+                            style={{ background: color + "20", border: `1px solid ${color}50` }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] tracking-wide uppercase font-medium mb-0.5" style={{ color, opacity: 0.65 }}>
+                              {m.period}
+                            </p>
+                            <p className="text-sm text-white/65 font-light leading-relaxed">{m.action}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+
+                    {/* Job search CTA */}
+                    <button
+                      onClick={onJobSearch}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium touch-manipulation"
+                      style={{
+                        background: color + "12",
+                        border: `1px solid ${color}30`,
+                        color,
+                        minHeight: 40,
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      See matching job postings
+                      <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+function IkigaiScoreRing({ score, reasoning }: { score: number; reasoning: string }) {
+  const radius = 38;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+
+  const scoreColor =
+    score >= 70 ? "#10b981" :
+    score >= 45 ? "#f97316" :
+    "#e8845a";
+
+  return (
+    <motion.div
+      className="mx-auto mb-5 w-full max-w-xs rounded-2xl px-5 py-5 flex flex-col items-center gap-4"
+      style={{
+        background: "rgba(255,255,255,0.025)",
+        border: `1px solid ${scoreColor}22`,
+      }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15 }}
+    >
+      <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 self-start">Living your Ikigai</p>
+
+      <div className="flex items-center gap-5 w-full">
+        {/* Ring */}
+        <div className="relative shrink-0 w-[96px] h-[96px]">
+          <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
+            {/* Track */}
+            <circle cx="48" cy="48" r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="7" />
+            {/* Progress */}
+            <motion.circle
+              cx="48" cy="48" r={radius}
+              fill="none"
+              stroke={scoreColor}
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: offset }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+              style={{ filter: `drop-shadow(0 0 6px ${scoreColor}88)` }}
+            />
+          </svg>
+          {/* Score number */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.span
+              className="text-2xl font-semibold leading-none"
+              style={{ color: scoreColor }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              {score}
+            </motion.span>
+            <span className="text-[9px] text-white/25 font-light mt-0.5">%</span>
+          </div>
+        </div>
+
+        {/* Reasoning */}
+        <p className="flex-1 text-[12px] text-white/48 font-light leading-relaxed">{reasoning}</p>
+      </div>
+    </motion.div>
   );
 }
 
