@@ -387,20 +387,6 @@ function RevealContent() {
                     <IkigaiScoreRing score={synthesis.ikigaiScore.score} reasoning={synthesis.ikigaiScore.reasoning} />
                   )}
 
-                  {/* Dimension tags */}
-                  <div className="flex flex-wrap justify-center gap-2 mb-4">
-                    {DIMENSION_CONFIG.map(({ label, Icon, color, bg, border }) => (
-                      <div
-                        key={label}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-light tracking-wide"
-                        style={{ background: bg, border: `1px solid ${border}`, color }}
-                      >
-                        <Icon className="w-2.5 h-2.5 shrink-0" />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                  </div>
-
                   {/* Footer: branding + share */}
                   <div
                     className="flex items-center justify-between pt-4"
