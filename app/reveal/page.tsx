@@ -54,7 +54,7 @@ function RevealContent() {
   const [synthesis, setSynthesis] = useState<IkigaiSynthesis | null>(null);
   const [phase, setPhase] = useState<"cinematic" | "signin" | "title" | "expanded">("cinematic");
   const isSignedInRef = useRef<boolean | null>(null);
-  const [openDeepDive, setOpenDeepDive] = useState<number | null>(null);
+  const [openDeepDive, setOpenDeepDive] = useState<number | null>(0);
   const [copied, setCopied] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
