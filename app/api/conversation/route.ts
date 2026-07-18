@@ -119,16 +119,21 @@ The user just said they don't know. They are genuinely stuck — don't push them
 - When the user says something specific and confident — a real answer, not a guess — end your reply with the token [EXIT_EXPLORATION] on its own line.`;
 
 export async function POST(req: NextRequest) {
-  const { messages, progress, insights, currentFocus, length = "medium", explorationMode = false } = await req.json() as {
+  const { messages, progress, insights, currentFocus, length = "medium", explorationMode = false, language = "en" } = await req.json() as {
     messages: ConversationMessage[];
     progress: Record<IkigaiDimension, number>;
     insights: Record<IkigaiDimension, string[]>;
     currentFocus: IkigaiDimension | null;
     length?: "ultra" | "short" | "medium" | "long";
     explorationMode?: boolean;
+    language?: "en" | "es";
   };
 
-  const systemPrompt = BASE_SYSTEM_PROMPT + (LENGTH_PROMPTS[length] ?? LENGTH_PROMPTS.medium) + (explorationMode ? EXPLORATION_PROMPT : "");
+  const SPANISH_INSTRUCTION = language === "es"
+    ? "\n\nIMPORTANTE: Esta conversación es en español de España. Responde SIEMPRE en español. Usa el dialecto de España (incluyendo 'vosotros' cuando corresponda). Mantén el mismo tono conversacional y directo, pero en español. Nunca respondas en inglés."
+    : "";
+
+  const systemPrompt = BASE_SYSTEM_PROMPT + (LENGTH_PROMPTS[length] ?? LENGTH_PROMPTS.medium) + (explorationMode ? EXPLORATION_PROMPT : "") + SPANISH_INSTRUCTION;
 
   const contextSummary = `
 Current progress: Love ${progress.love}%, Good ${progress.good}%, World ${progress.world}%, Paid ${progress.paid}%

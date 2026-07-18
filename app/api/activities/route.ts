@@ -4,11 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
-  const { city, dates, ikigaiTitle, sideQuests } = await req.json() as {
+  const { city, dates, ikigaiTitle, sideQuests, language = "en" } = await req.json() as {
     city: string;
     dates?: string;
     ikigaiTitle?: string;
     sideQuests?: string[];
+    language?: "en" | "es";
   };
 
   if (!city?.trim()) {
@@ -25,7 +26,9 @@ export async function POST(req: NextRequest) {
 
 ${context ? `CONTEXT:\n${context}\n` : ""}
 
-Generate 6 specific, concrete activity suggestions for ${city}. Each should feel like something real that exists there — reference actual types of venues, communities, or events that are common in that city. Mix online and in-person. Focus on activities that would genuinely help someone explore their purpose and connect with like-minded people.
+Generate 6 specific, concrete activity suggestions for ${city}. Each should feel like something real that exists there — reference actual types of venues, communities, or events that are common in that city (e.g. for Spain: Meetup España, Eventbrite ES, local ateneos, coworkings, asociaciones culturales). Mix online and in-person. Focus on activities that would genuinely help someone explore their purpose and connect with like-minded people.
+
+${language === "es" ? "Write ALL output in Spanish (Spain dialect). Keep the JSON keys in English." : ""}
 
 Return a JSON array (no markdown):
 [

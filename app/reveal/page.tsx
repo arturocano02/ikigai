@@ -16,37 +16,18 @@ import {
   Heart,
   Zap,
   Globe,
-  DollarSign,
   TrendingUp,
   Compass,
   Flame,
   Map,
   Sparkles,
   ArrowRight,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { useResponsiveSize } from "@/lib/useResponsiveSize";
 import { createClient } from "@/lib/supabase/client";
 
-const DIMENSION_CONFIG = [
-  { label: "What You Love", Icon: Heart, color: "#f43f5e", bg: "rgba(244,63,94,0.1)", border: "rgba(244,63,94,0.22)" },
-  { label: "What You're Good At", Icon: Zap, color: "#10b981", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.22)" },
-  { label: "What The World Needs", Icon: Globe, color: "#06b6d4", bg: "rgba(6,182,212,0.1)", border: "rgba(6,182,212,0.22)" },
-  { label: "What You Can Be Paid For", Icon: DollarSign, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.22)" },
-];
-
-const INSIGHT_CARDS = [
-  { key: "patterns" as const, title: "Patterns We Observed", Icon: TrendingUp, color: "#f97316", rgba: { bg: "rgba(249,115,22,0.06)", border: "rgba(249,115,22,0.2)", glow: "rgba(249,115,22,0.08)" } },
-  { key: "strengths" as const, title: "Natural Strengths", Icon: Zap, color: "#10b981", rgba: { bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.2)", glow: "rgba(16,185,129,0.08)" } },
-  { key: "idealEnvironments" as const, title: "Where You Thrive", Icon: Compass, color: "#06b6d4", rgba: { bg: "rgba(6,182,212,0.06)", border: "rgba(6,182,212,0.2)", glow: "rgba(6,182,212,0.08)" } },
-  { key: "motivations" as const, title: "Core Motivations", Icon: Flame, color: "#f59e0b", rgba: { bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.2)", glow: "rgba(245,158,11,0.08)" } },
-];
-
-const HIGHLIGHT_COLORS = [
-  { bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.28)", color: "rgba(253,186,116,0.95)" },
-  { bg: "rgba(20,184,166,0.12)", border: "rgba(20,184,166,0.28)", color: "rgba(94,234,212,0.95)" },
-  { bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.28)", color: "rgba(216,180,254,0.95)" },
-  { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)", color: "rgba(253,230,138,0.95)" },
-];
 
 function RevealContent() {
   const router = useRouter();
@@ -54,7 +35,6 @@ function RevealContent() {
   const [synthesis, setSynthesis] = useState<IkigaiSynthesis | null>(null);
   const [phase, setPhase] = useState<"cinematic" | "signin" | "title" | "expanded">("cinematic");
   const isSignedInRef = useRef<boolean | null>(null);
-  const [openDeepDive, setOpenDeepDive] = useState<number | null>(0);
   const [copied, setCopied] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
@@ -342,7 +322,7 @@ function RevealContent() {
               transition={{ duration: 0.55 }}
             >
 
-              {/* ── SHARE CARD ── */}
+              {/* ── VENN CARD (shareable) ── */}
               <motion.div
                 className="relative rounded-3xl overflow-hidden"
                 initial={{ opacity: 0, y: 20 }}
@@ -350,29 +330,27 @@ function RevealContent() {
                 transition={{ delay: 0.05 }}
                 style={{
                   background:
-                    "linear-gradient(rgba(8,8,18,0.94), rgba(8,8,18,0.94)) padding-box, " +
-                    "linear-gradient(135deg, #f43f5e 0%, #10b981 33%, #06b6d4 66%, #f59e0b 100%) border-box",
+                    "linear-gradient(rgba(8,8,18,0.96), rgba(8,8,18,0.96)) padding-box, " +
+                    "linear-gradient(135deg, #e8845a 0%, #4ecdc4 33%, #9b6dff 66%, #f5c842 100%) border-box",
                   border: "1.5px solid transparent",
-                  boxShadow: "0 0 80px rgba(249,115,22,0.07), 0 0 40px rgba(20,184,166,0.05), 0 24px 48px rgba(0,0,0,0.35)",
+                  boxShadow: "0 0 80px rgba(249,115,22,0.07), 0 24px 48px rgba(0,0,0,0.4)",
                 }}
               >
-                {/* Inner ambient glow at top */}
-                <div
-                  className="absolute inset-x-0 top-0 h-28 pointer-events-none"
-                  style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(249,115,22,0.07), transparent)" }}
+                <div className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(249,115,22,0.06), transparent)" }}
                 />
 
-                <div className="relative px-6 py-7 sm:px-8 sm:py-8 text-center">
-                  {/* Label row */}
-                  <div className="flex items-center justify-center gap-2.5 mb-5">
-                    <div className="h-px flex-1 max-w-10" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.14))" }} />
-                    <p className="text-[9px] tracking-[0.55em] uppercase text-white/28 font-medium">Ikigai Profile</p>
-                    <div className="h-px flex-1 max-w-10" style={{ background: "linear-gradient(to left, transparent, rgba(255,255,255,0.14))" }} />
+                <div className="relative px-5 pt-6 pb-5 sm:px-7 sm:pt-7">
+                  {/* Header label */}
+                  <div className="flex items-center justify-center gap-2.5 mb-4">
+                    <div className="h-px flex-1 max-w-8" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.12))" }} />
+                    <p className="text-[9px] tracking-[0.5em] uppercase text-white/25 font-medium">Ikigai Profile</p>
+                    <div className="h-px flex-1 max-w-8" style={{ background: "linear-gradient(to left, transparent, rgba(255,255,255,0.12))" }} />
                   </div>
 
                   {/* Title */}
                   <h1
-                    className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight mb-3"
+                    className="text-center text-2xl sm:text-3xl font-semibold leading-tight mb-2"
                     style={{
                       background: "linear-gradient(135deg, #ffffff 0%, #fde68a 55%, #ffffff 100%)",
                       WebkitBackgroundClip: "text",
@@ -385,33 +363,19 @@ function RevealContent() {
                   </h1>
 
                   {/* Subtitle */}
-                  <p className="text-sm sm:text-base text-white/55 font-light leading-relaxed mb-5 max-w-sm mx-auto">
+                  <p className="text-center text-sm text-white/50 font-light leading-relaxed mb-5 max-w-xs mx-auto">
                     {synthesis.subtitle}
                   </p>
 
-                  {/* Ikigai Score */}
-                  {synthesis.ikigaiScore != null && (
-                    <IkigaiScoreRing score={synthesis.ikigaiScore.score} reasoning={synthesis.ikigaiScore.reasoning} />
+                  {/* Circles */}
+                  {synthesis.quadrantItems && (
+                    <VennDiagram quadrantItems={synthesis.quadrantItems} vennDetails={synthesis.vennDetails} />
                   )}
 
-                  {/* Dimension tags */}
-                  <div className="flex flex-wrap justify-center gap-2 mb-4">
-                    {DIMENSION_CONFIG.map(({ label, Icon, color, bg, border }) => (
-                      <div
-                        key={label}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-light tracking-wide"
-                        style={{ background: bg, border: `1px solid ${border}`, color }}
-                      >
-                        <Icon className="w-2.5 h-2.5 shrink-0" />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Footer: branding + share */}
+                  {/* Footer */}
                   <div
-                    className="flex items-center justify-between pt-4"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.055)" }}
+                    className="flex items-center justify-between mt-4 pt-4"
+                    style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
                   >
                     <span className="text-[9px] text-white/18 tracking-[0.4em] uppercase font-light">ikigai.ai</span>
                     <button
@@ -426,289 +390,24 @@ function RevealContent() {
                 </div>
               </motion.div>
 
-              {/* ── VENN DIAGRAM ── */}
-              {synthesis.quadrantItems && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="rounded-2xl px-4 py-5 sm:px-6 sm:py-6"
-                  style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
-                >
-                  <VennDiagram quadrantItems={synthesis.quadrantItems} vennDetails={synthesis.vennDetails} />
-                </motion.div>
+              {/* ── IKIGAI SCORE compact ── */}
+              {synthesis.ikigaiScore != null && (
+                <IkigaiScoreCompact
+                  score={synthesis.ikigaiScore.score}
+                  reasoning={synthesis.ikigaiScore.reasoning}
+                  detail={synthesis.ikigaiScore.detail}
+                />
               )}
 
-              {/* ── INSIGHT CARDS 2×2 ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {INSIGHT_CARDS.map((card, idx) => {
-                  const items = synthesis[card.key] as string[] | undefined;
-                  if (!items?.length) return null;
-                  return (
-                    <InsightCard
-                      key={card.key}
-                      title={card.title}
-                      Icon={card.Icon}
-                      items={items}
-                      color={card.color}
-                      rgba={card.rgba}
-                      delay={0.22 + idx * 0.07}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* ── KAMIYA NEEDS ── */}
-              {synthesis.kamiyaNeeds && (synthesis.kamiyaNeeds.met.length > 0 || synthesis.kamiyaNeeds.unmet.length > 0) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.44 }}
-                  className="rounded-2xl p-5 sm:p-6"
-                  style={{
-                    background: "#12121a",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 16,
-                  }}
-                >
-                  <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 mb-4">
-                    What your life is currently giving you
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Met needs */}
-                    {synthesis.kamiyaNeeds.met.length > 0 && (
-                      <div className="space-y-2.5">
-                        <p className="text-[10px] tracking-widest uppercase font-medium mb-3" style={{ color: "#4ecdc4" }}>
-                          Working for you
-                        </p>
-                        {synthesis.kamiyaNeeds.met.map((item, i) => {
-                          const colonIdx = item.indexOf(":");
-                          const needName = colonIdx > -1 ? item.slice(0, colonIdx) : null;
-                          const rest = colonIdx > -1 ? item.slice(colonIdx + 1).trim() : item;
-                          return (
-                            <div key={i} className="flex items-start gap-2.5">
-                              <span className="mt-1 w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[8px]" style={{ background: "rgba(78,205,196,0.15)", border: "1px solid rgba(78,205,196,0.35)", color: "#4ecdc4" }}>✓</span>
-                              <p className="text-xs text-white/55 font-light leading-relaxed">
-                                {needName && <span className="text-white/75 font-medium">{needName}: </span>}{rest}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {/* Unmet needs */}
-                    {synthesis.kamiyaNeeds.unmet.length > 0 && (
-                      <div className="space-y-2.5">
-                        <p className="text-[10px] tracking-widest uppercase font-medium mb-3" style={{ color: "#e8845a" }}>
-                          Not yet satisfied
-                        </p>
-                        {synthesis.kamiyaNeeds.unmet.map((item, i) => {
-                          const colonIdx = item.indexOf(":");
-                          const needName = colonIdx > -1 ? item.slice(0, colonIdx) : null;
-                          const rest = colonIdx > -1 ? item.slice(colonIdx + 1).trim() : item;
-                          return (
-                            <div key={i} className="flex items-start gap-2.5">
-                              <span className="mt-1 w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[8px]" style={{ background: "rgba(232,132,90,0.12)", border: "1px solid rgba(232,132,90,0.3)", color: "#e8845a" }}>○</span>
-                              <p className="text-xs text-white/55 font-light leading-relaxed">
-                                {needName && <span className="text-white/75 font-medium">{needName}: </span>}{rest}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── DEEP DIVE ── */}
-              {synthesis.deepDive?.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="space-y-2.5"
-                >
-                  <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 px-1 mb-3">Deep Dive</p>
-                  {synthesis.deepDive.map((item, i) => {
-                    const isOpen = openDeepDive === i;
-                    return (
-                      <div
-                        key={i}
-                        className="rounded-2xl overflow-hidden transition-all"
-                        style={{
-                          background: isOpen ? "rgba(249,115,22,0.04)" : "rgba(255,255,255,0.03)",
-                          border: isOpen ? "1px solid rgba(249,115,22,0.22)" : "1px solid rgba(255,255,255,0.07)",
-                          backdropFilter: "blur(20px)",
-                        }}
-                      >
-                        <button
-                          className="w-full flex items-center gap-3.5 px-5 py-4 text-left touch-manipulation"
-                          style={{ WebkitTapHighlightColor: "transparent", minHeight: 58 }}
-                          onClick={() => setOpenDeepDive(isOpen ? null : i)}
-                        >
-                          <span
-                            className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium transition-all"
-                            style={{
-                              background: isOpen ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.07)",
-                              color: isOpen ? "rgba(249,115,22,0.95)" : "rgba(255,255,255,0.28)",
-                              border: isOpen ? "1px solid rgba(249,115,22,0.35)" : "1px solid rgba(255,255,255,0.09)",
-                            }}
-                          >
-                            {i + 1}
-                          </span>
-                          <span className="flex-1 text-sm text-white/72 font-light leading-snug pr-2">
-                            {item.heading}
-                          </span>
-                          <motion.div
-                            animate={{ rotate: isOpen ? 180 : 0 }}
-                            transition={{ duration: 0.22 }}
-                            className="shrink-0"
-                          >
-                            <ChevronDown className="w-4 h-4 text-white/22" />
-                          </motion.div>
-                        </button>
-                        <AnimatePresence>
-                          {isOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.25 }}
-                              className="overflow-hidden"
-                            >
-                              <p
-                                className="px-5 pb-5 text-sm text-white/50 font-light leading-relaxed pt-3"
-                                style={{ borderTop: "1px solid rgba(249,115,22,0.08)" }}
-                              >
-                                {item.detail}
-                              </p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
-
-              {/* ── SIDE QUESTS ── */}
-              {synthesis.sideQuests && synthesis.sideQuests.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.52 }}
-                  className="rounded-2xl p-5 sm:p-6 space-y-4"
-                  style={{
-                    background: "linear-gradient(145deg, rgba(168,85,247,0.06), rgba(255,255,255,0.02))",
-                    border: "1px solid rgba(168,85,247,0.2)",
-                    boxShadow: "0 0 28px rgba(168,85,247,0.06)",
-                  }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)" }}>
-                      <Sparkles className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />
-                    </div>
-                    <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#a855f7" }}>Side Quests</p>
-                  </div>
-                  <div className="h-px" style={{ background: "linear-gradient(to right, rgba(168,85,247,0.2), transparent)" }} />
-                  <ul className="space-y-3">
-                    {synthesis.sideQuests.map((quest, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span
-                          className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium"
-                          style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}
-                        >
-                          {i + 1}
-                        </span>
-                        <span className="text-sm text-white/65 font-light leading-relaxed">{quest}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {/* City button */}
-                  <button
-                    onClick={() => {
-                      try { sessionStorage.setItem("ikigai_synthesis", JSON.stringify(synthesis)); } catch { /* ignore */ }
-                      router.push("/activities");
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-medium tracking-wide touch-manipulation transition-colors"
-                    style={{
-                      background: "rgba(168,85,247,0.1)",
-                      border: "1px solid rgba(168,85,247,0.25)",
-                      color: "#c084fc",
-                      minHeight: 44,
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Find side quests in my city
-                    <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-                  </button>
-                </motion.div>
-              )}
-
-              {/* ── POTENTIAL FUTURES (4 career paths) ── */}
-              {synthesis.careerPaths && synthesis.careerPaths.length > 0 && (
-                <CareerPathsSection paths={synthesis.careerPaths} onJobSearch={handleCareers} />
-              )}
-
-              {/* ── PURPOSE & LIFE ADVICE ── */}
-              {synthesis.purposeAdvice && synthesis.purposeAdvice.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="rounded-2xl p-5 sm:p-6 space-y-4"
-                  style={{
-                    background: "linear-gradient(145deg, rgba(245,158,11,0.06), rgba(255,255,255,0.02))",
-                    border: "1px solid rgba(245,158,11,0.2)",
-                    boxShadow: "0 0 28px rgba(245,158,11,0.06)",
-                  }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-lg shrink-0" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
-                      <Flame className="w-3.5 h-3.5" style={{ color: "#f59e0b" }} />
-                    </div>
-                    <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color: "#f59e0b" }}>Purpose & Life</p>
-                  </div>
-                  <div className="h-px" style={{ background: "linear-gradient(to right, rgba(245,158,11,0.2), transparent)" }} />
-                  <ul className="space-y-3.5">
-                    {synthesis.purposeAdvice.map((advice, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f59e0b", boxShadow: "0 0 6px #f59e0b" }} />
-                        <span className="text-sm text-white/65 font-light leading-relaxed">{advice}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )}
-
-              {/* ── YOUR STORY (deep read, moved to bottom) ── */}
-              {synthesis.explanation && (
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.62 }}
-                  className="rounded-2xl p-5 sm:p-6"
-                  style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.015)" }}
-                >
-                  <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 mb-4">The full picture</p>
-                  <div className="flex gap-4">
-                    <div
-                      className="shrink-0 w-0.5 rounded-full self-stretch"
-                      style={{
-                        background: "linear-gradient(180deg, rgba(249,115,22,0.5), rgba(20,184,166,0.4), transparent)",
-                        minHeight: 48,
-                      }}
-                    />
-                    <div className="space-y-3.5">
-                      {synthesis.explanation.split(/\n\n+/).filter(Boolean).map((para, i) => (
-                        <p key={i} className="text-[14px] text-white/55 font-light leading-[1.8]">{para}</p>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+              {/* ── SECTION ACCORDION ── */}
+              <SectionList
+                synthesis={synthesis}
+                onJobSearch={handleCareers}
+                onCityQuests={() => {
+                  try { sessionStorage.setItem("ikigai_synthesis", JSON.stringify(synthesis)); } catch { /* ignore */ }
+                  router.push("/activities");
+                }}
+              />
 
               {/* ── SIGN-UP CTA (only if not signed in) ── */}
               {isSignedIn === false && (
@@ -940,8 +639,9 @@ function CareerPathsSection({
   );
 }
 
-function IkigaiScoreRing({ score, reasoning }: { score: number; reasoning: string }) {
-  const radius = 38;
+function IkigaiScoreCompact({ score, reasoning, detail }: { score: number; reasoning: string; detail?: string }) {
+  const [showPopup, setShowPopup] = useState(false);
+  const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
@@ -951,105 +651,435 @@ function IkigaiScoreRing({ score, reasoning }: { score: number; reasoning: strin
     "#e8845a";
 
   return (
-    <motion.div
-      className="mx-auto mb-5 w-full max-w-xs rounded-2xl px-5 py-5 flex flex-col items-center gap-4"
-      style={{
-        background: "rgba(255,255,255,0.025)",
-        border: `1px solid ${scoreColor}22`,
-      }}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 }}
-    >
-      <p className="text-[9px] tracking-[0.45em] uppercase text-white/20 self-start">Living your Ikigai</p>
-
-      <div className="flex items-center gap-5 w-full">
-        {/* Ring */}
-        <div className="relative shrink-0 w-[96px] h-[96px]">
-          <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
-            {/* Track */}
-            <circle cx="48" cy="48" r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="7" />
-            {/* Progress */}
+    <>
+      <motion.button
+        onClick={() => setShowPopup(true)}
+        className="w-full flex items-center gap-4 rounded-2xl px-4 py-4 text-left touch-manipulation"
+        style={{ background: "rgba(255,255,255,0.025)", border: `1px solid ${scoreColor}20`, WebkitTapHighlightColor: "transparent" }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        {/* Mini ring */}
+        <div className="relative shrink-0 w-[56px] h-[56px]">
+          <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
+            <circle cx="28" cy="28" r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5" />
             <motion.circle
-              cx="48" cy="48" r={radius}
-              fill="none"
-              stroke={scoreColor}
-              strokeWidth="7"
-              strokeLinecap="round"
+              cx="28" cy="28" r={radius}
+              fill="none" stroke={scoreColor} strokeWidth="5" strokeLinecap="round"
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
               animate={{ strokeDashoffset: offset }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-              style={{ filter: `drop-shadow(0 0 6px ${scoreColor}88)` }}
+              style={{ filter: `drop-shadow(0 0 4px ${scoreColor}88)` }}
             />
           </svg>
-          {/* Score number */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <motion.span
-              className="text-2xl font-semibold leading-none"
-              style={{ color: scoreColor }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              {score}
-            </motion.span>
-            <span className="text-[9px] text-white/25 font-light mt-0.5">%</span>
+            <span className="text-base font-semibold leading-none" style={{ color: scoreColor }}>{score}</span>
+            <span className="text-[8px] text-white/25 font-light">%</span>
           </div>
         </div>
 
-        {/* Reasoning */}
-        <p className="flex-1 text-[12px] text-white/48 font-light leading-relaxed">{reasoning}</p>
-      </div>
+        {/* Text */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[9px] tracking-[0.3em] uppercase text-white/20 mb-1">Living your Ikigai</p>
+          <p className="text-sm text-white/65 font-light leading-snug">{reasoning}</p>
+        </div>
+
+        {/* Tap hint */}
+        <ChevronRight className="shrink-0 w-4 h-4 text-white/18" />
+      </motion.button>
+
+      {/* Popup */}
+      <AnimatePresence>
+        {showPopup && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40"
+              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowPopup(false)}
+            />
+            <motion.div
+              className="fixed z-50 left-4 right-4 rounded-3xl overflow-hidden"
+              style={{
+                top: "50%", maxWidth: 420, marginLeft: "auto", marginRight: "auto",
+                background: "linear-gradient(160deg, #13131f 0%, #0d0d18 100%)",
+                border: `1px solid ${scoreColor}30`,
+                boxShadow: `0 0 60px ${scoreColor}18, 0 24px 48px rgba(0,0,0,0.5)`,
+              }}
+              initial={{ opacity: 0, scale: 0.88, y: "-42%" }}
+              animate={{ opacity: 1, scale: 1, y: "-50%" }}
+              exit={{ opacity: 0, scale: 0.92, y: "-46%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 340 }}
+            >
+              <div className="h-0.5 w-full" style={{ background: `linear-gradient(to right, ${scoreColor}, ${scoreColor}00)` }} />
+              <div className="px-6 pt-5 pb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-[9px] tracking-[0.3em] uppercase mb-1" style={{ color: scoreColor, opacity: 0.7 }}>Ikigai alignment</p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-4xl font-semibold" style={{ color: scoreColor }}>{score}</span>
+                      <span className="text-base text-white/30 font-light">/ 100</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowPopup(false)}
+                    className="w-9 h-9 rounded-full flex items-center justify-center touch-manipulation"
+                    style={{ background: "rgba(255,255,255,0.07)", WebkitTapHighlightColor: "transparent" }}
+                  >
+                    <X className="w-4 h-4 text-white/45" />
+                  </button>
+                </div>
+                <div className="mx-0 mb-4 h-px" style={{ background: `linear-gradient(to right, ${scoreColor}40, transparent)` }} />
+                <p className="text-[14px] text-white/65 font-light leading-relaxed mb-3">{reasoning}</p>
+                {detail && <p className="text-[13px] text-white/45 font-light leading-relaxed">{detail}</p>}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function SectionList({
+  synthesis,
+  onJobSearch,
+  onCityQuests,
+}: {
+  synthesis: IkigaiSynthesis;
+  onJobSearch: () => void;
+  onCityQuests: () => void;
+}) {
+  const [openKey, setOpenKey] = useState<string | null>("futurePaths");
+  const [openDeepDive, setOpenDeepDive] = useState<number | null>(0);
+
+  type SectionDef = {
+    key: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+    color: string;
+    available: boolean;
+    content: React.ReactNode;
+  };
+
+  const sections: SectionDef[] = [
+    {
+      key: "futurePaths",
+      label: "Future Paths",
+      icon: Map,
+      color: "#06b6d4",
+      available: !!synthesis.careerPaths?.length,
+      content: <CareerPathsSection paths={synthesis.careerPaths ?? []} onJobSearch={onJobSearch} />,
+    },
+    {
+      key: "purposeLife",
+      label: "Purpose & Life",
+      icon: Flame,
+      color: "#f59e0b",
+      available: !!synthesis.purposeAdvice?.length,
+      content: (
+        <ul className="space-y-3.5 pt-1">
+          {synthesis.purposeAdvice?.map((advice, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f59e0b", boxShadow: "0 0 6px #f59e0b" }} />
+              <span className="text-sm text-white/65 font-light leading-relaxed">{advice}</span>
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      key: "sideQuests",
+      label: "Side Quests",
+      icon: Sparkles,
+      color: "#a855f7",
+      available: !!synthesis.sideQuests?.length,
+      content: (
+        <div className="space-y-4 pt-1">
+          <ul className="space-y-3">
+            {synthesis.sideQuests?.map((quest, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium" style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc" }}>{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white/65 font-light leading-relaxed">{quest}</p>
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(quest)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium touch-manipulation"
+                    style={{ color: "#c084fc", opacity: 0.6 }}
+                  >
+                    <ExternalLink className="w-2.5 h-2.5" />
+                    Search
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={onCityQuests}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-medium tracking-wide touch-manipulation"
+            style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc", minHeight: 44, WebkitTapHighlightColor: "transparent" }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Find side quests in my city
+            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+          </button>
+        </div>
+      ),
+    },
+    {
+      key: "patterns",
+      label: "Patterns We Observed",
+      icon: TrendingUp,
+      color: "#f97316",
+      available: !!synthesis.patterns?.length,
+      content: (
+        <ul className="space-y-2.5 pt-1">
+          {synthesis.patterns?.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f97316" }} />
+              <span className="text-sm text-white/65 font-light leading-relaxed">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      key: "strengths",
+      label: "Natural Strengths",
+      icon: Zap,
+      color: "#10b981",
+      available: !!synthesis.strengths?.length,
+      content: (
+        <ul className="space-y-2.5 pt-1">
+          {synthesis.strengths?.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#10b981" }} />
+              <span className="text-sm text-white/65 font-light leading-relaxed">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      key: "environments",
+      label: "Where You Thrive",
+      icon: Compass,
+      color: "#06b6d4",
+      available: !!synthesis.idealEnvironments?.length,
+      content: (
+        <ul className="space-y-2.5 pt-1">
+          {synthesis.idealEnvironments?.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#06b6d4" }} />
+              <span className="text-sm text-white/65 font-light leading-relaxed">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      key: "lifeNeeds",
+      label: "What Life Is Currently Giving You",
+      icon: Heart,
+      color: "#e8845a",
+      available: !!(synthesis.kamiyaNeeds?.met.length || synthesis.kamiyaNeeds?.unmet.length),
+      content: (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          {synthesis.kamiyaNeeds?.met.length ? (
+            <div className="space-y-2.5">
+              <p className="text-[10px] tracking-widest uppercase font-medium mb-3" style={{ color: "#4ecdc4" }}>Working for you</p>
+              {synthesis.kamiyaNeeds.met.map((item, i) => {
+                const ci = item.indexOf(":");
+                const name = ci > -1 ? item.slice(0, ci) : null;
+                const rest = ci > -1 ? item.slice(ci + 1).trim() : item;
+                return (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="mt-1 w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[8px]" style={{ background: "rgba(78,205,196,0.15)", border: "1px solid rgba(78,205,196,0.35)", color: "#4ecdc4" }}>✓</span>
+                    <p className="text-xs text-white/55 font-light leading-relaxed">{name && <span className="text-white/75 font-medium">{name}: </span>}{rest}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+          {synthesis.kamiyaNeeds?.unmet.length ? (
+            <div className="space-y-2.5">
+              <p className="text-[10px] tracking-widest uppercase font-medium mb-3" style={{ color: "#e8845a" }}>Not yet satisfied</p>
+              {synthesis.kamiyaNeeds.unmet.map((item, i) => {
+                const ci = item.indexOf(":");
+                const name = ci > -1 ? item.slice(0, ci) : null;
+                const rest = ci > -1 ? item.slice(ci + 1).trim() : item;
+                return (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="mt-1 w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[8px]" style={{ background: "rgba(232,132,90,0.12)", border: "1px solid rgba(232,132,90,0.3)", color: "#e8845a" }}>○</span>
+                    <p className="text-xs text-white/55 font-light leading-relaxed">{name && <span className="text-white/75 font-medium">{name}: </span>}{rest}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      key: "deepDive",
+      label: "Deep Dive Q&A",
+      icon: ChevronDown,
+      color: "#f97316",
+      available: !!synthesis.deepDive?.length,
+      content: (
+        <div className="space-y-2 pt-1">
+          {synthesis.deepDive?.map((item, i) => {
+            const isOpen = openDeepDive === i;
+            return (
+              <div key={i} className="rounded-xl overflow-hidden" style={{ background: isOpen ? "rgba(249,115,22,0.04)" : "rgba(255,255,255,0.03)", border: isOpen ? "1px solid rgba(249,115,22,0.2)" : "1px solid rgba(255,255,255,0.06)" }}>
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left touch-manipulation"
+                  style={{ WebkitTapHighlightColor: "transparent", minHeight: 52 }}
+                  onClick={() => setOpenDeepDive(isOpen ? null : i)}
+                >
+                  <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium" style={{ background: isOpen ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.07)", color: isOpen ? "rgba(249,115,22,0.95)" : "rgba(255,255,255,0.28)", border: isOpen ? "1px solid rgba(249,115,22,0.35)" : "1px solid rgba(255,255,255,0.09)" }}>{i + 1}</span>
+                  <span className="flex-1 text-sm text-white/70 font-light leading-snug pr-2">{item.heading}</span>
+                  <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
+                    <ChevronDown className="w-3.5 h-3.5 text-white/22" />
+                  </motion.div>
+                </button>
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
+                      <p className="px-4 pb-4 text-sm text-white/50 font-light leading-relaxed pt-2" style={{ borderTop: "1px solid rgba(249,115,22,0.08)" }}>{item.detail}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      ),
+    },
+    {
+      key: "motivations",
+      label: "Core Motivations",
+      icon: Flame,
+      color: "#f59e0b",
+      available: !!synthesis.motivations?.length,
+      content: (
+        <ul className="space-y-2.5 pt-1">
+          {synthesis.motivations?.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f59e0b" }} />
+              <span className="text-sm text-white/65 font-light leading-relaxed">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      key: "fullPicture",
+      label: "Full Picture",
+      icon: Globe,
+      color: "#9b6dff",
+      available: !!synthesis.explanation,
+      content: (
+        <div className="flex gap-4 pt-1">
+          <div className="shrink-0 w-0.5 rounded-full self-stretch" style={{ background: "linear-gradient(180deg, rgba(249,115,22,0.5), rgba(20,184,166,0.4), transparent)", minHeight: 40 }} />
+          <div className="space-y-3.5">
+            {synthesis.explanation?.split(/\n\n+/).filter(Boolean).map((para, i) => (
+              <p key={i} className="text-[14px] text-white/55 font-light leading-[1.8]">{para}</p>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "careerMatches",
+      label: "Career Matches",
+      icon: TrendingUp,
+      color: "#10b981",
+      available: true,
+      content: (
+        <div className="pt-2">
+          <p className="text-sm text-white/45 font-light leading-relaxed mb-4">Search for real job postings that match your Ikigai on LinkedIn and other boards.</p>
+          <button
+            onClick={onJobSearch}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-medium touch-manipulation"
+            style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", minHeight: 48, WebkitTapHighlightColor: "transparent" }}
+          >
+            <TrendingUp className="w-4 h-4" />
+            See Career Matches
+            <ChevronRight className="w-4 h-4 opacity-60" />
+          </button>
+        </div>
+      ),
+    },
+  ].filter((s) => s.available);
+
+  return (
+    <motion.div
+      className="space-y-2"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+    >
+      {sections.map((section) => {
+        const isOpen = openKey === section.key;
+        const Icon = section.icon;
+        return (
+          <div
+            key={section.key}
+            className="rounded-2xl overflow-hidden transition-colors"
+            style={{
+              background: isOpen ? `${section.color}08` : "rgba(255,255,255,0.025)",
+              border: isOpen ? `1px solid ${section.color}28` : "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            {/* Row header */}
+            <button
+              className="w-full flex items-center gap-3.5 px-4 py-4 text-left touch-manipulation"
+              style={{ WebkitTapHighlightColor: "transparent", minHeight: 56 }}
+              onClick={() => setOpenKey(isOpen ? null : section.key)}
+            >
+              <span
+                className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+                style={{ background: isOpen ? `${section.color}20` : "rgba(255,255,255,0.06)", border: `1px solid ${isOpen ? section.color + "40" : "rgba(255,255,255,0.08)"}` }}
+              >
+                <Icon className="w-3.5 h-3.5" style={{ color: isOpen ? section.color : "rgba(255,255,255,0.35)" }} />
+              </span>
+              <span className="flex-1 text-sm font-light" style={{ color: isOpen ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.6)" }}>
+                {section.label}
+              </span>
+              <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }} className="shrink-0">
+                <ChevronDown className="w-4 h-4" style={{ color: isOpen ? section.color : "rgba(255,255,255,0.18)" }} />
+              </motion.div>
+            </button>
+
+            {/* Expanded content */}
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 pb-5" style={{ borderTop: `1px solid ${section.color}15` }}>
+                    {section.content}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
     </motion.div>
   );
 }
 
-function InsightCard({
-  title,
-  Icon,
-  items,
-  color,
-  rgba,
-  delay,
-}: {
-  title: string;
-  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  items: string[];
-  color: string;
-  rgba: { bg: string; border: string; glow: string };
-  delay: number;
-}) {
-  return (
-    <motion.div
-      className="rounded-2xl p-4 sm:p-5"
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.48 }}
-      style={{
-        background: `linear-gradient(145deg, ${rgba.bg}, rgba(255,255,255,0.02))`,
-        border: `1px solid ${rgba.border}`,
-        boxShadow: `0 0 28px ${rgba.glow}`,
-      }}
-    >
-      <div className="flex items-center gap-2.5 mb-3.5">
-        <div className="p-1.5 rounded-lg shrink-0" style={{ background: rgba.bg, border: `1px solid ${rgba.border}` }}>
-          <Icon className="w-3.5 h-3.5" style={{ color }} />
-        </div>
-        <p className="text-[10px] tracking-widest uppercase font-medium" style={{ color }}>{title}</p>
-      </div>
-      <div className="mb-3.5 h-px" style={{ background: `linear-gradient(to right, ${rgba.border}, transparent)` }} />
-      <ul className="space-y-2.5">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2.5">
-            <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
-            <span className="text-xs text-white/65 font-light leading-relaxed">{item}</span>
-          </li>
-        ))}
-      </ul>
-    </motion.div>
-  );
-}
 
 export default function RevealPage() {
   return (

@@ -31,11 +31,14 @@ export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [synthesis, setSynthesis] = useState<IkigaiSynthesis | null>(null);
+  const [lang, setLang] = useState<"en" | "es">("en");
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem("ikigai_synthesis");
       if (raw) setSynthesis(JSON.parse(raw));
+      const l = sessionStorage.getItem("ikigai_language");
+      if (l === "es") setLang("es");
     } catch { /* ignore */ }
   }, []);
 
@@ -55,6 +58,7 @@ export default function ActivitiesPage() {
           dates: dates.trim() || undefined,
           ikigaiTitle: synthesis?.title,
           sideQuests: synthesis?.sideQuests,
+          language: lang,
         }),
       });
       const data = await res.json();
