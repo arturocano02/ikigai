@@ -56,7 +56,7 @@ PERSONALITY ANALYSIS RULES. THIS IS THE MOST IMPORTANT PART:
 
 Return a JSON object with this exact structure (no markdown, raw JSON only):
 {
-  "title": "2-4 word unique Ikigai title (e.g. 'Systems Storyteller', 'AI Clarity Builder'). Evocative, not generic.",
+  "title": "2-3 word title that will define this person's identity for life. Must be instantly memorable - the kind of thing they'll say when someone asks 'what do you do?' and mean it at soul level. Use unexpected word combinations that feel specific to THEM, not a job title. Think: 'Chaos Architect', 'Quiet Revolutionary', 'Bridge Between Worlds', 'The Honest Mirror'. No corporate language. No generic descriptors. If you could tattoo it, would it mean something?",
   "subtitle": "One direct, declarative sentence - a verdict, not a hedge or a question. Should feel shockingly accurate.",
   "highlights": [
     "3-5 word punchy phrase",
