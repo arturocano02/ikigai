@@ -144,11 +144,29 @@ export function useVoice(onTranscript: (text: string) => void) {
 
       setState((s) => ({ ...s, isSpeaking: true }));
 
+      let resolved = false;
+      let loadTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
       const finish = () => {
+        if (resolved) return;
+        resolved = true;
+        if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
         setState((s) => ({ ...s, isSpeaking: false }));
         onEnd?.();
         resolve();
       };
+
+      // If audio hasn't started playing within 2.5s, carry on without it
+      loadTimeoutId = setTimeout(() => {
+        if (resolved) return;
+        console.warn("[voice] audio load timeout — carrying on with conversation");
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause();
+          currentAudioRef.current = null;
+        }
+        window.speechSynthesis?.cancel();
+        finish();
+      }, 2500);
 
       // Try ElevenLabs first
       try {
@@ -170,6 +188,8 @@ export function useVoice(onTranscript: (text: string) => void) {
             fallbackTTS(text, finish);
           };
           await audio.play();
+          // Audio is playing — clear the load timeout so it plays to completion
+          if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
           return;
         } else {
           const body = await res.text().catch(() => "");

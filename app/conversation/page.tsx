@@ -347,6 +347,14 @@ export default function ConversationPage() {
               >
                 Get ready...
               </motion.p>
+              <motion.p
+                className="text-[11px] text-white/22 text-center max-w-[200px] leading-relaxed"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                Tap the mic on &amp; off as you speak — it helps the conversation flow better
+              </motion.p>
             </motion.div>
           )}
         </AnimatePresence>
