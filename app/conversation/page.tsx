@@ -104,6 +104,7 @@ export default function ConversationPage() {
   const isMobile = useIsMobile();
 
   const isProcessingRef = useRef(false);
+  const revealingRef = useRef(false);
   const speakRef = useRef<((text: string, onEnd?: () => void) => Promise<void>) | null>(null);
   const sendMessageRef = useRef(sendMessage);
   sendMessageRef.current = sendMessage;
@@ -114,19 +115,19 @@ export default function ConversationPage() {
   explorationModeRef.current = explorationMode;
 
   const handleTranscript = useCallback(async (text: string) => {
-    if (!text.trim() || isProcessingRef.current) return;
+    if (!text.trim() || isProcessingRef.current || revealingRef.current) return;
     isProcessingRef.current = true;
     setOrbState("thinking");
     setCurrentText(""); // clear previous AI response when user starts speaking
 
     await sendMessageRef.current(text, (aiResponse, exitExploration) => {
+      if (revealingRef.current) return; // reveal clicked while response was in flight — drop it
       if (exitExploration) setExplorationMode(false);
       setOrbState("speaking");
       setCurrentText(aiResponse);
       speakRef.current?.(aiResponse, () => {
         setOrbState("listening");
         isProcessingRef.current = false;
-        // keep currentText on screen — it clears when the user speaks next
       });
     }, explorationModeRef.current);
   }, []);
@@ -202,8 +203,10 @@ export default function ConversationPage() {
   }, [countdown]);
 
   function handleCenterClick() {
+    revealingRef.current = true;
     voice.stopListening();
     voice.cancelSpeech();
+    speakRef.current = null; // prevent any queued speaks from firing
     isProcessingRef.current = false;
     setOrbState("thinking");
     triggerSynthesis();
