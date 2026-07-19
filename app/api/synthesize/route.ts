@@ -221,27 +221,8 @@ purposeAdvice: Not about jobs. About how to live. Direct. Not preachy.`;
       synthesis.ikigaiScore.score = Math.min(100, Math.max(0, Math.round(Number(synthesis.ikigaiScore.score))));
     }
     return NextResponse.json(synthesis);
-  } catch {
-    return NextResponse.json(
-      {
-        title: "Purpose Seeker",
-        subtitle: "Still discovering your unique intersection.",
-        highlights: ["Genuine curiosity", "Meaningful work", "Self-aware"],
-        explanation: "Your conversation revealed deep thoughtfulness and genuine self-awareness.",
-        patterns: ["Thoughtful and reflective", "Values meaningful work"],
-        strengths: ["Self-awareness", "Genuine curiosity"],
-        idealEnvironments: ["Collaborative, purposeful spaces"],
-        motivations: ["Making a real difference"],
-        deepDive: [
-          { heading: "The depth you bring to everything", detail: "You don't skim the surface." }
-        ],
-        careerKeywords: ["meaningful work", "creative problem solving"],
-        quadrantItems: { love: [], skill: [], world: [], paid: [] },
-        vennDetails: null,
-        careerPaths: [],
-        kamiyaNeeds: { met: [], unmet: [] },
-      },
-      { status: 200 }
-    );
+  } catch (err) {
+    console.error("[synthesize] JSON parse failed:", err, "raw length:", rawText.length);
+    return NextResponse.json({ error: "parse_failed" }, { status: 422 });
   }
 }

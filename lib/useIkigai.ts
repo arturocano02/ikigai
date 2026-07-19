@@ -1,7 +1,22 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { IkigaiDimension, ConversationMessage, IkigaiSynthesis } from "@/types/ikigai";
+
+const BACKUP_KEY = "ikigai_conv_backup";
+const SYNTHESIS_KEY = "ikigai_synthesis_result";
+
+function saveBackup(data: object) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+}
+function clearBackup() {
+  try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
+}
+function saveSynthesis(data: object) {
+  try { sessionStorage.setItem(SYNTHESIS_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+  // Also persist to localStorage so it survives page refresh
+  try { localStorage.setItem(SYNTHESIS_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+}
 
 export interface IkigaiSessionState {
   messages: ConversationMessage[];
@@ -11,6 +26,7 @@ export interface IkigaiSessionState {
   isComplete: boolean;
   synthesis: IkigaiSynthesis | null;
   isSynthesizing: boolean;
+  synthesisError: boolean;
   phase: "intro" | "conversation" | "ready" | "synthesizing" | "revealed";
 }
 
@@ -44,6 +60,7 @@ export function useIkigai(
     isComplete: false,
     synthesis: null,
     isSynthesizing: false,
+    synthesisError: false,
     phase: initialSession ? "conversation" : "intro",
   }));
 
@@ -59,7 +76,7 @@ export function useIkigai(
     insights: Record<IkigaiDimension, string[]>,
     messages: ConversationMessage[]
   ) => {
-    setState((s) => ({ ...s, isSynthesizing: true, phase: "synthesizing" }));
+    setState((s) => ({ ...s, isSynthesizing: true, synthesisError: false, phase: "synthesizing" }));
 
     let userContext: { age?: string; currentRole?: string; otherContext?: string } | undefined;
     try {
@@ -67,27 +84,49 @@ export function useIkigai(
       if (raw) userContext = JSON.parse(raw);
     } catch { /* ignore */ }
 
-    try {
-      const res = await fetch("/api/synthesize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progress, insights, messages, userContext, language }),
-      });
+    const body = JSON.stringify({ progress, insights, messages, userContext, language });
 
-      const data = await res.json();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
 
-      setState((s) => ({
-        ...s,
-        synthesis: data,
-        isSynthesizing: false,
-        phase: "revealed",
-        isComplete: true,
-      }));
-    } catch (err) {
-      console.error("Synthesis error:", err);
-      setState((s) => ({ ...s, isSynthesizing: false }));
+        const res = await fetch("/api/synthesize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.warn(`[synthesize] attempt ${attempt + 1} failed: ${res.status}`, err);
+          if (attempt < 2) continue;
+          setState((s) => ({ ...s, isSynthesizing: false, synthesisError: true }));
+          return;
+        }
+
+        const data = await res.json();
+
+        // Persist so reveal page can read it without a fragile URL param
+        saveSynthesis(data);
+        clearBackup(); // conversation completed successfully
+
+        setState((s) => ({
+          ...s,
+          synthesis: data,
+          isSynthesizing: false,
+          synthesisError: false,
+          phase: "revealed",
+          isComplete: true,
+        }));
+        return;
+      } catch (err) {
+        console.warn(`[synthesize] attempt ${attempt + 1} threw:`, err);
+        if (attempt >= 2) {
+          setState((s) => ({ ...s, isSynthesizing: false, synthesisError: true }));
+        }
+      }
     }
-  }, []);
+  }, [language]);
 
   const sendMessage = useCallback(async (
     userText: string,
@@ -163,6 +202,14 @@ export function useIkigai(
       insightsRef.current = newInsights;
       focusRef.current = newFocus;
 
+      // Auto-backup so user doesn't lose work if they close mid-conversation
+      saveBackup({
+        messages: messagesRef.current,
+        progress: newProgress,
+        insights: newInsights,
+        currentFocus: newFocus,
+      });
+
       setState((s) => ({
         ...s,
         messages: messagesRef.current,
@@ -194,6 +241,7 @@ export function useIkigai(
     progressRef.current = makeInitialProgress();
     insightsRef.current = makeInitialInsights();
     focusRef.current = null;
+    clearBackup();
     setState({
       messages: [],
       progress: makeInitialProgress(),
@@ -202,6 +250,7 @@ export function useIkigai(
       isComplete: false,
       synthesis: null,
       isSynthesizing: false,
+      synthesisError: false,
       phase: "intro",
     });
   }, []);
