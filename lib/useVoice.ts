@@ -146,6 +146,8 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
 
       let resolved = false;
       let loadTimeoutId: ReturnType<typeof setTimeout> | null = null;
+      // AbortController lets us cancel a slow ElevenLabs fetch before it plays into an open mic
+      const abortCtrl = new AbortController();
 
       const finish = () => {
         if (resolved) return;
@@ -156,17 +158,19 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         resolve();
       };
 
-      // If audio hasn't started playing within 2.5s, carry on without it
+      // Give ElevenLabs 6s before giving up — avoids the race where TTS starts
+      // listening and then ElevenLabs audio arrives late and plays into the open mic
       loadTimeoutId = setTimeout(() => {
         if (resolved) return;
         console.warn("[voice] audio load timeout — carrying on with conversation");
+        abortCtrl.abort(); // cancel any in-flight fetch so it can't play later
         if (currentAudioRef.current) {
           currentAudioRef.current.pause();
           currentAudioRef.current = null;
         }
         window.speechSynthesis?.cancel();
         finish();
-      }, 2500);
+      }, 6000);
 
       // Try ElevenLabs first
       try {
@@ -174,10 +178,15 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, language }),
+          signal: abortCtrl.signal,
         });
+
+        if (resolved) return; // timeout already fired — don't play anything
 
         if (res.ok) {
           const blob = await res.blob();
+          if (resolved) return; // timeout fired while downloading blob
+
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
           currentAudioRef.current = audio;
@@ -185,7 +194,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           audio.onerror = () => {
             URL.revokeObjectURL(url);
             console.error("[voice] ElevenLabs audio failed to play, falling back to browser TTS");
-            fallbackTTS(text, finish, language);
+            if (!resolved) fallbackTTS(text, finish, language);
           };
           await audio.play();
           // Audio is playing — clear the load timeout so it plays to completion
@@ -196,10 +205,11 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           console.error(`[voice] /api/speak returned ${res.status}, falling back to browser TTS:`, body);
         }
       } catch (err) {
+        if ((err as Error).name === "AbortError") return; // intentional abort — timeout already called finish()
         console.error("[voice] /api/speak request failed, falling back to browser TTS:", err);
       }
 
-      fallbackTTS(text, finish, language);
+      if (!resolved) fallbackTTS(text, finish, language);
     });
   }, [language]);
 
@@ -217,17 +227,38 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
 
 function fallbackTTS(text: string, onEnd: () => void, language: "en" | "es" = "en") {
   if (typeof window === "undefined" || !window.speechSynthesis) { onEnd(); return; }
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = language === "es" ? "es-ES" : "en-US";
-  utt.rate = 0.9;
-  utt.pitch = 1;
-  utt.volume = 1;
+
+  function speakWithVoices(voices: SpeechSynthesisVoice[]) {
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = language === "es" ? "es-ES" : "en-US";
+    utt.rate = 0.9;
+    utt.pitch = 1;
+    utt.volume = 1;
+    const preferred = language === "es"
+      ? voices.find((v) => v.lang.startsWith("es") && v.localService) ?? voices.find((v) => v.lang.startsWith("es"))
+      : voices.find((v) => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang.startsWith("en") && v.localService));
+    if (preferred) utt.voice = preferred;
+    utt.onend = onEnd;
+    utt.onerror = onEnd;
+    window.speechSynthesis.speak(utt);
+  }
+
+  // Voices load asynchronously on first call — if the list is empty, wait for it
   const voices = window.speechSynthesis.getVoices();
-  const preferred = language === "es"
-    ? voices.find((v) => v.lang.startsWith("es") && v.localService) ?? voices.find((v) => v.lang.startsWith("es"))
-    : voices.find((v) => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang.startsWith("en") && v.localService));
-  if (preferred) utt.voice = preferred;
-  utt.onend = onEnd;
-  utt.onerror = onEnd;
-  window.speechSynthesis.speak(utt);
+  if (voices.length > 0) {
+    speakWithVoices(voices);
+  } else {
+    const handler = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      speakWithVoices(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.onvoiceschanged = handler;
+    // Safety net: if event never fires, try after 800ms anyway
+    setTimeout(() => {
+      if (window.speechSynthesis.onvoiceschanged === handler) {
+        window.speechSynthesis.onvoiceschanged = null;
+        speakWithVoices(window.speechSynthesis.getVoices());
+      }
+    }, 800);
+  }
 }

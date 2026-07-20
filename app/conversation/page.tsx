@@ -366,8 +366,8 @@ export default function ConversationPage() {
           </motion.div>
         )}
 
-        {/* Stable below-orb zone — mode="wait" ensures pre-start fully exits before countdown enters */}
-        <div className="w-full flex flex-col items-center" style={{ minHeight: 240 }}>
+        {/* Stable below-orb zone — minHeight only reserved during pre-start/countdown to prevent jumps */}
+        <div className="w-full flex flex-col items-center" style={{ minHeight: audioUnlocked ? 0 : 240 }}>
           <AnimatePresence mode="wait">
 
             {/* Pre-start: honest note + language picker + begin */}
@@ -384,11 +384,16 @@ export default function ConversationPage() {
                   <p className="text-xs text-white/40 tracking-widest uppercase">Continuing your session</p>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    {/* Honest answer note */}
-                    <p className="text-center text-[11px] text-white/50 font-light leading-relaxed max-w-[240px]">
+                    {/* Honest answer note — prominent title */}
+                    <p className="text-center text-base font-medium text-white/80 leading-snug max-w-[260px]">
                       {language === "es"
-                        ? "No es una entrevista. Responde con honestidad para obtener el mejor resultado."
-                        : "This isn’t a job interview. Answer honestly for the most accurate results."}
+                        ? "No es una entrevista."
+                        : "This isn’t a job interview."}
+                    </p>
+                    <p className="text-center text-[12px] text-white/40 font-light leading-relaxed max-w-[240px] -mt-1">
+                      {language === "es"
+                        ? "Responde con honestidad para obtener el mejor resultado."
+                        : "Answer honestly for the most accurate results."}
                     </p>
 
                     {/* Length picker */}
