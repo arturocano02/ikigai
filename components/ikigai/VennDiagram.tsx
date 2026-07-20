@@ -73,18 +73,28 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
 
   const meta = activePopup ? POPUP_META[activePopup] : null;
 
+  function toArr(v: unknown): string[] {
+    if (Array.isArray(v)) return v as string[];
+    if (typeof v === "string" && v.length) return [v];
+    return [];
+  }
+
   function getPopupItems(key: PopupKey): string[] {
-    if (vennDetails && vennDetails[key]?.length) return vennDetails[key];
-    if (key === "love")       return quadrantItems?.love  ?? [];
-    if (key === "skill")      return quadrantItems?.skill ?? [];
-    if (key === "world")      return quadrantItems?.world ?? [];
-    if (key === "paid")       return quadrantItems?.paid  ?? [];
-    // Intersection fallback: combine the two relevant quadrants
-    if (key === "passion")    return [...(quadrantItems?.love  ?? []), ...(quadrantItems?.skill ?? [])];
-    if (key === "mission")    return [...(quadrantItems?.love  ?? []), ...(quadrantItems?.world ?? [])];
-    if (key === "profession") return [...(quadrantItems?.skill ?? []), ...(quadrantItems?.paid  ?? [])];
-    if (key === "vocation")   return [...(quadrantItems?.world ?? []), ...(quadrantItems?.paid  ?? [])];
-    if (key === "ikigai")     return [...(quadrantItems?.love  ?? []), ...(quadrantItems?.skill ?? [])].slice(0, 4);
+    const vd = vennDetails?.[key];
+    if (vd) { const arr = toArr(vd); if (arr.length) return arr; }
+    const love  = toArr(quadrantItems?.love);
+    const skill = toArr(quadrantItems?.skill);
+    const world = toArr(quadrantItems?.world);
+    const paid  = toArr(quadrantItems?.paid);
+    if (key === "love")       return love;
+    if (key === "skill")      return skill;
+    if (key === "world")      return world;
+    if (key === "paid")       return paid;
+    if (key === "passion")    return [...love,  ...skill];
+    if (key === "mission")    return [...love,  ...world];
+    if (key === "profession") return [...skill, ...paid];
+    if (key === "vocation")   return [...world, ...paid];
+    if (key === "ikigai")     return [...love,  ...skill].slice(0, 4);
     return [];
   }
 
@@ -128,29 +138,29 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
           <circle cx={310} cy={310} r={115} fill="none" stroke="#f5c842" strokeWidth={5} strokeOpacity={0.06} />
 
           {/* Labels outside circles, items inside the exclusive (non-overlapping) top/bottom zone */}
-          {/* LOVE — label above circle, items inside top-left zone */}
+          {/* LOVE — label above, items inside upper-left exclusive zone (y≈95-110, clear of edge + overlap) */}
           <text x={170} y={48} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
-          {quadrantItems.love.slice(0, 2).map((item, i) => (
-            <text key={i} x={170} y={70 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+          {toArr(quadrantItems.love).slice(0, 2).map((item, i) => (
+            <text key={i} x={170} y={95 + i * 16} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* SKILL — label above circle, items inside top-right zone */}
+          {/* SKILL — label above, items inside upper-right exclusive zone */}
           <text x={310} y={48} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
-          {quadrantItems.skill.slice(0, 2).map((item, i) => (
-            <text key={i} x={310} y={70 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+          {toArr(quadrantItems.skill).slice(0, 2).map((item, i) => (
+            <text key={i} x={310} y={95 + i * 16} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* WORLD — items inside bottom-left zone, label below circle */}
-          {quadrantItems.world.slice(0, 2).map((item, i) => (
-            <text key={i} x={170} y={397 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+          {/* WORLD — items inside lower-left exclusive zone, label below */}
+          {toArr(quadrantItems.world).slice(0, 2).map((item, i) => (
+            <text key={i} x={170} y={374 + i * 16} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
-          <text x={170} y={430} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
+          <text x={170} y={432} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
 
-          {/* VALUE — items inside bottom-right zone, label below circle */}
-          {quadrantItems.paid.slice(0, 2).map((item, i) => (
-            <text key={i} x={310} y={397 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+          {/* VALUE — items inside lower-right exclusive zone, label below */}
+          {toArr(quadrantItems.paid).slice(0, 2).map((item, i) => (
+            <text key={i} x={310} y={374 + i * 16} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
-          <text x={310} y={430} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
+          <text x={310} y={432} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
 
           {/* Intersection label hints — slightly visible so users know they're tappable */}
           <text x={240} y={151} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "passion" ? 0.75 : 0.32} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PASSION</text>

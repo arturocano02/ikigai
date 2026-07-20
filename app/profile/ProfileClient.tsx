@@ -35,8 +35,18 @@ export default function ProfileClient({ user, sessions: initialSessions }: Props
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
-  // Save pending session from localStorage (set before OAuth redirect on /reveal)
+  // If user just signed in mid-session (fresh synthesis + active conversation in sessionStorage), send to /reveal
   useEffect(() => {
+    try {
+      const hasSynthesis = !!localStorage.getItem("ikigai_synthesis_result");
+      const hasSession = !!sessionStorage.getItem("ikigai_session");
+      if (hasSynthesis && hasSession) {
+        router.replace("/reveal");
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // Legacy: save pending session from localStorage (set before OAuth redirect)
     const pending = localStorage.getItem("ikigai_pending_save");
     if (!pending) return;
 
@@ -66,7 +76,7 @@ export default function ProfileClient({ user, sessions: initialSessions }: Props
     } catch {
       localStorage.removeItem("ikigai_pending_save");
     }
-  }, []);
+  }, [router]);
 
   async function handleSignOut() {
     setSigningOut(true);

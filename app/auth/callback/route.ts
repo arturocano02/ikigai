@@ -33,10 +33,9 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const dest = data.user?.email === "arturocanobusi@gmail.com" ? "/admin" : next;
-      return NextResponse.redirect(`${origin}${dest}`);
+      return NextResponse.redirect(`${origin}${next}`);
     }
     console.error("[auth/callback] exchangeCodeForSession error:", error.message);
   }

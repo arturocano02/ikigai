@@ -190,7 +190,8 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
           currentAudioRef.current = audio;
-          audio.onended = () => { URL.revokeObjectURL(url); finish(); };
+          // 350ms buffer: lets speakers fully clear before mic re-opens to prevent feedback
+          audio.onended = () => { URL.revokeObjectURL(url); setTimeout(finish, 350); };
           audio.onerror = () => {
             URL.revokeObjectURL(url);
             console.error("[voice] ElevenLabs audio failed to play, falling back to browser TTS");
@@ -238,7 +239,7 @@ function fallbackTTS(text: string, onEnd: () => void, language: "en" | "es" = "e
       ? voices.find((v) => v.lang.startsWith("es") && v.localService) ?? voices.find((v) => v.lang.startsWith("es"))
       : voices.find((v) => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang.startsWith("en") && v.localService));
     if (preferred) utt.voice = preferred;
-    utt.onend = onEnd;
+    utt.onend = () => setTimeout(onEnd, 350);
     utt.onerror = onEnd;
     window.speechSynthesis.speak(utt);
   }
