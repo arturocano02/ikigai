@@ -42,23 +42,23 @@ const POPUP_META: Record<PopupKey, { title: string; color: string; subtitle: str
   mission:     { title: "Mission",                  color: "#c084fc", subtitle: "Love × World" },
   profession:  { title: "Profession",               color: "#22d3ee", subtitle: "Skill × Paid" },
   vocation:    { title: "Vocation",                 color: "#fbbf24", subtitle: "World × Paid" },
-  ikigai:      { title: "Your Ikigai",              color: "#fb923c", subtitle: "Where all four meet" },
+  ikigai:      { title: "Your Ikigai",              color: "#d4a017", subtitle: "Where all four meet" },
 };
 
-// SVG viewBox: 0 0 480 480
-// Circles r=110, centers: Love(170,170) Skill(310,170) World(170,310) Paid(310,310)
-const CIRCLE_HITS: { key: PopupKey; left: string; top: string }[] = [
-  { key: "love",  left: "35.4%", top: "19.8%" },
-  { key: "skill", left: "64.6%", top: "19.8%" },
-  { key: "world", left: "35.4%", top: "80.2%" },
-  { key: "paid",  left: "64.6%", top: "80.2%" },
+// SVG viewBox: 0 0 480 480, circles r=110
+// Exclusive area hit zones (% of container width/height)
+const CIRCLE_HITS: { key: PopupKey; cx: number; cy: number }[] = [
+  { key: "love",  cx: 170, cy: 170 }, // top-left circle
+  { key: "skill", cx: 310, cy: 170 }, // top-right circle
+  { key: "world", cx: 170, cy: 310 }, // bottom-left circle
+  { key: "paid",  cx: 310, cy: 310 }, // bottom-right circle
 ];
 
-const INTERSECTION_HITS: { key: PopupKey; left: string; top: string }[] = [
-  { key: "passion",    left: "50%",   top: "31.3%" },
-  { key: "mission",    left: "31.3%", top: "50%" },
-  { key: "profession", left: "68.8%", top: "50%" },
-  { key: "vocation",   left: "50%",   top: "68.8%" },
+const INTERSECTION_HITS: { key: PopupKey; cx: number; cy: number }[] = [
+  { key: "passion",    cx: 240, cy: 148 }, // love∩skill — top middle
+  { key: "mission",   cx: 148, cy: 240 }, // love∩world — left middle
+  { key: "profession", cx: 332, cy: 240 }, // skill∩paid — right middle
+  { key: "vocation",  cx: 240, cy: 332 }, // world∩paid — bottom middle
 ];
 
 function trunc(s: string, n: number) {
@@ -67,6 +67,7 @@ function trunc(s: string, n: number) {
 
 export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
   const [activePopup, setActivePopup] = useState<PopupKey | null>(null);
+  const [hovered, setHovered] = useState<PopupKey | null>(null);
 
   if (!quadrantItems) return null;
 
@@ -83,14 +84,17 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
 
   const popupItems = activePopup ? getPopupItems(activePopup) : [];
 
+  // Convert SVG coordinate to percentage
+  const pct = (n: number) => `${(n / 480) * 100}%`;
+
   return (
     <div className="relative w-full select-none">
-      {/* Diagram + overlay buttons */}
+      {/* Diagram container */}
       <div className="relative w-full" style={{ maxWidth: 480, margin: "0 auto" }}>
         <svg
           viewBox="0 0 480 480"
           xmlns="http://www.w3.org/2000/svg"
-          style={{ width: "100%", display: "block" }}
+          style={{ width: "100%", display: "block", pointerEvents: "none" }}
           aria-hidden="true"
         >
           <defs>
@@ -108,198 +112,191 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
           <circle cx={170} cy={310} r={110} fill="url(#grad-world)" stroke="#9b6dff" strokeWidth={1.4} strokeOpacity={0.5} />
           <circle cx={310} cy={310} r={110} fill="url(#grad-paid)"  stroke="#f5c842" strokeWidth={1.4} strokeOpacity={0.5} />
 
-          {/* Glow rings */}
-          <circle cx={170} cy={170} r={114} fill="none" stroke="#e8845a" strokeWidth={5} strokeOpacity={0.07} />
-          <circle cx={310} cy={170} r={114} fill="none" stroke="#4ecdc4" strokeWidth={5} strokeOpacity={0.07} />
-          <circle cx={170} cy={310} r={114} fill="none" stroke="#9b6dff" strokeWidth={5} strokeOpacity={0.07} />
-          <circle cx={310} cy={310} r={114} fill="none" stroke="#f5c842" strokeWidth={5} strokeOpacity={0.07} />
+          {/* Hover highlight rings */}
+          {hovered === "love"  && <circle cx={170} cy={170} r={113} fill="none" stroke="#e8845a" strokeWidth={3} strokeOpacity={0.45} />}
+          {hovered === "skill" && <circle cx={310} cy={170} r={113} fill="none" stroke="#4ecdc4" strokeWidth={3} strokeOpacity={0.45} />}
+          {hovered === "world" && <circle cx={170} cy={310} r={113} fill="none" stroke="#9b6dff" strokeWidth={3} strokeOpacity={0.45} />}
+          {hovered === "paid"  && <circle cx={310} cy={310} r={113} fill="none" stroke="#f5c842" strokeWidth={3} strokeOpacity={0.45} />}
 
-          {/* ── CIRCLE LABELS: only the 4 exclusive areas show text ── */}
+          {/* Subtle glow rings */}
+          <circle cx={170} cy={170} r={115} fill="none" stroke="#e8845a" strokeWidth={5} strokeOpacity={0.06} />
+          <circle cx={310} cy={170} r={115} fill="none" stroke="#4ecdc4" strokeWidth={5} strokeOpacity={0.06} />
+          <circle cx={170} cy={310} r={115} fill="none" stroke="#9b6dff" strokeWidth={5} strokeOpacity={0.06} />
+          <circle cx={310} cy={310} r={115} fill="none" stroke="#f5c842" strokeWidth={5} strokeOpacity={0.06} />
 
-          {/* LOVE — top-left exclusive area */}
-          <text x={170} y={72} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
+          {/* Circle labels */}
+          <text x={170} y={70} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
           {quadrantItems.love.slice(0, 2).map((item, i) => (
-            <text key={i} x={170} y={87 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif" fontWeight="400">
-              {trunc(item, 18)}
-            </text>
+            <text key={i} x={170} y={85 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* SKILL — top-right exclusive area */}
-          <text x={310} y={72} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
+          <text x={310} y={70} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
           {quadrantItems.skill.slice(0, 2).map((item, i) => (
-            <text key={i} x={310} y={87 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif" fontWeight="400">
-              {trunc(item, 18)}
-            </text>
+            <text key={i} x={310} y={85 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* WORLD — bottom-left exclusive area */}
-          <text x={170} y={405} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
+          <text x={170} y={407} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
           {quadrantItems.world.slice(0, 2).map((item, i) => (
-            <text key={i} x={170} y={419 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif" fontWeight="400">
-              {trunc(item, 18)}
-            </text>
+            <text key={i} x={170} y={421 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* PAID — bottom-right exclusive area */}
-          <text x={310} y={405} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
+          <text x={310} y={407} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
           {quadrantItems.paid.slice(0, 2).map((item, i) => (
-            <text key={i} x={310} y={419 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif" fontWeight="400">
-              {trunc(item, 18)}
-            </text>
+            <text key={i} x={310} y={421 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* ── INTERSECTION HINTS: small dots only, no text — tap to reveal ── */}
-          {/* Passion (Love∩Skill) */}
-          <circle cx={240} cy={150} r={3.5} fill="white" fillOpacity={0.18} />
-          {/* Mission (Love∩World) */}
-          <circle cx={150} cy={240} r={3.5} fill="white" fillOpacity={0.18} />
-          {/* Profession (Skill∩Paid) */}
-          <circle cx={330} cy={240} r={3.5} fill="white" fillOpacity={0.18} />
-          {/* Vocation (World∩Paid) */}
-          <circle cx={240} cy={330} r={3.5} fill="white" fillOpacity={0.18} />
+          {/* Intersection label hints */}
+          <text x={240} y={151} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "passion" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PASSION</text>
+          <text x={149} y={244} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "mission" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">MISSION</text>
+          <text x={331} y={244} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "profession" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PROFESSION</text>
+          <text x={240} y={337} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "vocation" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">VOCATION</text>
 
-          {/* ── CENTER IKIGAI: small orange ring only ── */}
-          <circle cx={240} cy={240} r={22} fill="rgba(249,115,22,0.1)" stroke="rgba(249,115,22,0.35)" strokeWidth={1.2} />
-          <circle cx={240} cy={240} r={4}  fill="rgba(249,115,22,0.7)" />
+          {/* Center IKIGAI ring */}
+          <circle cx={240} cy={240} r={24} fill="rgba(212,160,23,0.12)" stroke="rgba(212,160,23,0.4)" strokeWidth={1.2} />
+          <circle cx={240} cy={240} r={4.5} fill="rgba(212,160,23,0.8)" />
+          <text x={240} y={273} textAnchor="middle" fontSize={7} fill="#d4a017" fillOpacity={0.7} fontFamily="system-ui,sans-serif" fontWeight="700" letterSpacing="0.1em">IKIGAI</text>
         </svg>
 
-        {/* Circle hit buttons */}
-        {CIRCLE_HITS.map(({ key, left, top }) => (
-          <button
-            key={key}
-            onClick={() => setActivePopup(key)}
-            aria-label={POPUP_META[key].title}
-            style={{
-              position: "absolute", left, top,
-              transform: "translate(-50%, -50%)",
-              width: 64, height: 64,
-              background: "transparent", border: "none",
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-            }}
-          />
-        ))}
+        {/* Full-coverage clickable SVG overlay — one path per region */}
+        <svg
+          viewBox="0 0 480 480"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" }}
+          aria-hidden="true"
+        >
+          {/* Circle hit zones — large circles */}
+          {CIRCLE_HITS.map(({ key, cx, cy }) => (
+            <circle
+              key={key}
+              cx={cx} cy={cy} r={90}
+              fill="transparent"
+              style={{ cursor: "pointer" }}
+              onClick={() => setActivePopup(key)}
+              onMouseEnter={() => setHovered(key)}
+              onMouseLeave={() => setHovered(null)}
+              onTouchStart={() => setHovered(key)}
+              onTouchEnd={() => setHovered(null)}
+            />
+          ))}
 
-        {/* Intersection hit buttons */}
-        {INTERSECTION_HITS.map(({ key, left, top }) => (
-          <button
-            key={key}
-            onClick={() => setActivePopup(key)}
-            aria-label={POPUP_META[key].title}
-            style={{
-              position: "absolute", left, top,
-              transform: "translate(-50%, -50%)",
-              width: 56, height: 56,
-              background: "transparent", border: "none",
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-            }}
-          />
-        ))}
+          {/* Intersection hit zones */}
+          {INTERSECTION_HITS.map(({ key, cx, cy }) => (
+            <circle
+              key={key}
+              cx={cx} cy={cy} r={32}
+              fill="transparent"
+              style={{ cursor: "pointer" }}
+              onClick={() => setActivePopup(key)}
+              onMouseEnter={() => setHovered(key)}
+              onMouseLeave={() => setHovered(null)}
+              onTouchStart={() => setHovered(key)}
+              onTouchEnd={() => setHovered(null)}
+            />
+          ))}
 
-        {/* Center IKIGAI hit button */}
-        <button
-          onClick={() => setActivePopup("ikigai")}
-          aria-label="Your Ikigai"
-          style={{
-            position: "absolute", left: "50%", top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 56, height: 56,
-            background: "transparent", border: "none",
-            cursor: "pointer", WebkitTapHighlightColor: "transparent",
-          }}
-        />
+          {/* Center IKIGAI hit zone */}
+          <circle
+            cx={240} cy={240} r={28}
+            fill="transparent"
+            style={{ cursor: "pointer" }}
+            onClick={() => setActivePopup("ikigai")}
+            onMouseEnter={() => setHovered("ikigai")}
+            onMouseLeave={() => setHovered(null)}
+            onTouchStart={() => setHovered("ikigai")}
+            onTouchEnd={() => setHovered(null)}
+          />
+        </svg>
       </div>
 
       {/* Tap hint */}
-      <p className="text-center text-[10px] text-white/20 tracking-[0.25em] uppercase mt-2 font-light">
+      <p className="text-center text-[10px] text-white/22 tracking-[0.25em] uppercase mt-2 font-light">
         Tap any area to explore
       </p>
 
-      {/* ── CENTERED MODAL POPUP ── */}
+      {/* POPUP MODAL */}
       <AnimatePresence>
         {activePopup && meta && (
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 z-40"
-              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+              className="fixed inset-0 z-[60]"
+              style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.18 }}
               onClick={() => setActivePopup(null)}
             />
 
-            {/* Dialog */}
-            <motion.div
-              className="fixed z-50 left-4 right-4 rounded-3xl overflow-hidden"
-              style={{
-                top: "50%",
-                transform: "translateY(-50%)",
-                maxWidth: 420,
-                marginLeft: "auto",
-                marginRight: "auto",
-                background: "linear-gradient(160deg, #13131f 0%, #0d0d18 100%)",
-                border: `1px solid ${meta.color}30`,
-                boxShadow: `0 0 60px ${meta.color}18, 0 24px 48px rgba(0,0,0,0.5)`,
-                maxHeight: "80vh",
-              }}
-              initial={{ opacity: 0, scale: 0.88, y: "-42%" }}
-              animate={{ opacity: 1, scale: 1, y: "-50%" }}
-              exit={{ opacity: 0, scale: 0.92, y: "-46%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 340 }}
-            >
-              {/* Accent bar */}
-              <div className="h-0.5 w-full" style={{ background: `linear-gradient(to right, ${meta.color}, ${meta.color}00)` }} />
+            {/* Dialog — centered with flexbox, no transform animation conflicts */}
+            <div className="fixed inset-0 z-[61] flex items-center justify-center px-4 pointer-events-none">
+              <motion.div
+                className="w-full rounded-3xl overflow-hidden pointer-events-auto"
+                style={{
+                  maxWidth: 420,
+                  background: "linear-gradient(160deg, #13121e 0%, #0c0b16 100%)",
+                  border: `1px solid ${meta.color}35`,
+                  boxShadow: `0 0 60px ${meta.color}18, 0 24px 56px rgba(0,0,0,0.6)`,
+                  maxHeight: "80vh",
+                }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.93 }}
+                transition={{ type: "spring", damping: 26, stiffness: 380 }}
+              >
+                {/* Accent bar */}
+                <div className="h-0.5 w-full" style={{ background: `linear-gradient(to right, ${meta.color}, ${meta.color}00)` }} />
 
-              {/* Header */}
-              <div className="px-6 pt-5 pb-3 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[9px] tracking-[0.3em] uppercase font-medium mb-1" style={{ color: meta.color, opacity: 0.7 }}>
-                    {meta.subtitle}
-                  </p>
-                  <h3 className="text-[22px] font-semibold leading-tight text-white/92">
-                    {meta.title}
-                  </h3>
+                {/* Header */}
+                <div className="px-6 pt-5 pb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[9px] tracking-[0.3em] uppercase font-medium mb-1" style={{ color: meta.color, opacity: 0.75 }}>
+                      {meta.subtitle}
+                    </p>
+                    <h3 className="text-[22px] font-semibold leading-tight text-white/92">
+                      {meta.title}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setActivePopup(null)}
+                    className="shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center touch-manipulation"
+                    style={{ background: "rgba(255,255,255,0.07)", WebkitTapHighlightColor: "transparent" }}
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4 text-white/50" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setActivePopup(null)}
-                  className="shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center touch-manipulation"
-                  style={{ background: "rgba(255,255,255,0.07)", WebkitTapHighlightColor: "transparent" }}
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4 text-white/45" />
-                </button>
-              </div>
 
-              <div className="mx-6 mb-4 h-px" style={{ background: `linear-gradient(to right, ${meta.color}40, transparent)` }} />
+                <div className="mx-6 mb-4 h-px" style={{ background: `linear-gradient(to right, ${meta.color}45, transparent)` }} />
 
-              {/* Content */}
-              <div className="px-6 pb-7 overflow-y-auto" style={{ maxHeight: "calc(80vh - 110px)" }}>
-                {popupItems.length > 0 ? (
-                  <ul className="space-y-3.5">
-                    {popupItems.map((item, i) => (
-                      <motion.li
-                        key={i}
-                        className="flex items-start gap-3"
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.055 }}
-                      >
-                        <span
-                          className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ background: meta.color, boxShadow: `0 0 5px ${meta.color}` }}
-                        />
-                        <span className="text-[14px] text-white/70 font-light leading-relaxed">{item}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-white/30 font-light italic">
-                    Complete your conversation to unlock insights here.
-                  </p>
-                )}
-              </div>
-            </motion.div>
+                {/* Content */}
+                <div className="px-6 pb-7 overflow-y-auto" style={{ maxHeight: "calc(80vh - 110px)" }}>
+                  {popupItems.length > 0 ? (
+                    <ul className="space-y-3.5">
+                      {popupItems.map((item, i) => (
+                        <motion.li
+                          key={i}
+                          className="flex items-start gap-3"
+                          initial={{ opacity: 0, x: -6 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05, duration: 0.22 }}
+                        >
+                          <span
+                            className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: meta.color, boxShadow: `0 0 5px ${meta.color}` }}
+                          />
+                          <span className="text-[14px] text-white/72 font-light leading-relaxed">{item}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-white/30 font-light italic">
+                      Complete your conversation to unlock insights here.
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
