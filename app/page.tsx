@@ -59,7 +59,7 @@ export default function LandingPage() {
                 <span
                   className="font-semibold"
                   style={{
-                    background: "linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 40%, #ec4899 100%)",
+                    background: "linear-gradient(135deg, #fde68a 0%, #d4a017 45%, #cd7f32 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
@@ -90,13 +90,13 @@ export default function LandingPage() {
                 className="relative px-10 py-4 rounded-full text-white font-light text-sm tracking-widest uppercase overflow-hidden transition-all duration-300 w-full max-w-[200px] touch-manipulation"
                 style={{
                   background: hovering
-                    ? "rgba(139, 92, 246, 0.22)"
+                    ? "rgba(212, 160, 23, 0.22)"
                     : "rgba(255, 255, 255, 0.05)",
                   border: hovering
-                    ? "1px solid rgba(139, 92, 246, 0.55)"
+                    ? "1px solid rgba(212, 160, 23, 0.55)"
                     : "1px solid rgba(255, 255, 255, 0.1)",
                   boxShadow: hovering
-                    ? "0 0 32px rgba(139,92,246,0.28), inset 0 0 24px rgba(139,92,246,0.08)"
+                    ? "0 0 32px rgba(212,160,23,0.28), inset 0 0 24px rgba(212,160,23,0.08)"
                     : "none",
                   WebkitTapHighlightColor: "transparent",
                   minHeight: 52,
@@ -128,7 +128,7 @@ export default function LandingPage() {
                 { label: "Love", color: "#f43f5e" },
                 { label: "Skill", color: "#10b981" },
                 { label: "World", color: "#22d3ee" },
-                { label: "Value", color: "#a78bfa" },
+                { label: "Value", color: "#d4a017" },
               ].map((d) => (
                 <div key={d.label} className="flex flex-col items-center gap-2">
                   <div
@@ -157,7 +157,7 @@ export default function LandingPage() {
               className="rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(139,92,246,0.9) 0%, rgba(236,72,153,0.5) 40%, transparent 70%)",
+                  "radial-gradient(circle, rgba(212,160,23,0.9) 0%, rgba(205,127,50,0.5) 40%, transparent 70%)",
               }}
               initial={{ width: orbSize, height: orbSize }}
               animate={{ width: "200vmax", height: "200vmax" }}
@@ -182,9 +182,9 @@ function BackgroundField() {
   }));
 
   const colors = [
-    "rgba(139, 92, 246, 0.4)",
-    "rgba(236, 72, 153, 0.3)",
-    "rgba(34, 211, 238, 0.25)",
+    "rgba(212, 160, 23, 0.45)",
+    "rgba(205, 127, 50, 0.35)",
+    "rgba(245, 200, 66, 0.3)",
   ];
 
   return (
@@ -193,14 +193,14 @@ function BackgroundField() {
       <div
         className="absolute w-[600px] h-[600px] rounded-full -top-32 -left-32 opacity-20"
         style={{
-          background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(212,160,23,0.38) 0%, transparent 70%)",
           filter: "blur(60px)",
         }}
       />
       <div
         className="absolute w-[400px] h-[400px] rounded-full -bottom-20 -right-20 opacity-15"
         style={{
-          background: "radial-gradient(circle, rgba(236,72,153,0.45) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(205,127,50,0.35) 0%, transparent 70%)",
           filter: "blur(50px)",
         }}
       />

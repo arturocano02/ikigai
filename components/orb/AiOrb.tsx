@@ -70,7 +70,7 @@ export function AiOrb({
         for (let i = 3; i >= 1; i--) {
           const ringRadius = baseRadius * (1 + i * 0.35);
           const alpha = (state === "listening" ? 0.09 : 0.05) * (1 + audioLevel) / i;
-          const ringColor = state === "thinking" ? `rgba(34, 211, 238, ${alpha})` : `rgba(139, 92, 246, ${alpha})`;
+          const ringColor = state === "thinking" ? `rgba(34, 211, 238, ${alpha})` : `rgba(212, 160, 23, ${alpha})`;
           ctx.beginPath();
           ctx.arc(cx, cy, ringRadius + Math.sin(t * 2 + i) * 4, 0, Math.PI * 2);
           ctx.strokeStyle = ringColor;
@@ -152,15 +152,15 @@ export function AiOrb({
           boxShadow:
             state === "idle"
               ? [
-                  "0 0 40px rgba(139,92,246,0.22), 0 0 80px rgba(236,72,153,0.1)",
-                  "0 0 60px rgba(139,92,246,0.35), 0 0 110px rgba(236,72,153,0.16)",
-                  "0 0 40px rgba(139,92,246,0.22), 0 0 80px rgba(236,72,153,0.1)",
+                  "0 0 40px rgba(212,160,23,0.22), 0 0 80px rgba(205,127,50,0.1)",
+                  "0 0 60px rgba(212,160,23,0.36), 0 0 110px rgba(205,127,50,0.16)",
+                  "0 0 40px rgba(212,160,23,0.22), 0 0 80px rgba(205,127,50,0.1)",
                 ]
               : state === "listening"
               ? [
-                  "0 0 60px rgba(236,72,153,0.52), 0 0 120px rgba(139,92,246,0.28)",
-                  "0 0 85px rgba(236,72,153,0.7), 0 0 160px rgba(139,92,246,0.38)",
-                  "0 0 60px rgba(236,72,153,0.52), 0 0 120px rgba(139,92,246,0.28)",
+                  "0 0 60px rgba(212,160,23,0.55), 0 0 120px rgba(245,200,66,0.28)",
+                  "0 0 85px rgba(212,160,23,0.72), 0 0 160px rgba(245,200,66,0.38)",
+                  "0 0 60px rgba(212,160,23,0.55), 0 0 120px rgba(245,200,66,0.28)",
                 ]
               : state === "thinking"
               ? [
@@ -169,9 +169,9 @@ export function AiOrb({
                   "0 0 50px rgba(34,211,238,0.45), 0 0 100px rgba(56,189,248,0.22)",
                 ]
               : [
-                  "0 0 60px rgba(167,139,250,0.5), 0 0 120px rgba(139,92,246,0.3)",
-                  "0 0 88px rgba(167,139,250,0.68), 0 0 160px rgba(139,92,246,0.4)",
-                  "0 0 60px rgba(167,139,250,0.5), 0 0 120px rgba(139,92,246,0.3)",
+                  "0 0 60px rgba(245,200,66,0.5), 0 0 120px rgba(212,160,23,0.3)",
+                  "0 0 88px rgba(245,200,66,0.68), 0 0 160px rgba(212,160,23,0.4)",
+                  "0 0 60px rgba(245,200,66,0.5), 0 0 120px rgba(212,160,23,0.3)",
                 ],
         }}
         transition={{
@@ -200,10 +200,10 @@ interface Particle {
 }
 
 const COLORS = [
-  "rgba(139,92,246,",
-  "rgba(236,72,153,",
+  "rgba(212,160,23,",
+  "rgba(205,127,50,",
   "rgba(34,211,238,",
-  "rgba(167,139,250,",
+  "rgba(245,200,66,",
 ];
 
 function createParticle(size: number): Particle {
@@ -272,24 +272,24 @@ function drawCore(
   if (state === "thinking") {
     grad.addColorStop(0, `rgba(34, 211, 238, ${0.9 + Math.sin(t * 4) * 0.1})`);
     grad.addColorStop(0.4, `rgba(56, 189, 248, 0.8)`);
-    grad.addColorStop(0.8, `rgba(139, 92, 246, 0.4)`);
+    grad.addColorStop(0.8, `rgba(212, 160, 23, 0.35)`);
     grad.addColorStop(1, `rgba(34, 211, 238, 0)`);
   } else if (state === "speaking") {
-    grad.addColorStop(0, `rgba(167, 139, 250, ${0.92 + audioLevel * 0.08})`);
-    grad.addColorStop(0.4, `rgba(139, 92, 246, 0.88)`);
-    grad.addColorStop(0.75, `rgba(236, 72, 153, 0.55)`);
-    grad.addColorStop(1, `rgba(139, 92, 246, 0)`);
+    grad.addColorStop(0, `rgba(245, 200, 66, ${0.92 + audioLevel * 0.08})`);
+    grad.addColorStop(0.4, `rgba(212, 160, 23, 0.9)`);
+    grad.addColorStop(0.75, `rgba(205, 127, 50, 0.55)`);
+    grad.addColorStop(1, `rgba(212, 160, 23, 0)`);
   } else if (state === "listening") {
-    grad.addColorStop(0, `rgba(236, 72, 153, ${0.88 + audioLevel * 0.12})`);
-    grad.addColorStop(0.4, `rgba(139, 92, 246, 0.82)`);
-    grad.addColorStop(0.8, `rgba(34, 211, 238, 0.38)`);
-    grad.addColorStop(1, `rgba(236, 72, 153, 0)`);
+    grad.addColorStop(0, `rgba(212, 160, 23, ${0.9 + audioLevel * 0.1})`);
+    grad.addColorStop(0.4, `rgba(245, 200, 66, 0.82)`);
+    grad.addColorStop(0.8, `rgba(205, 127, 50, 0.4)`);
+    grad.addColorStop(1, `rgba(212, 160, 23, 0)`);
   } else {
     const pulse = 0.78 + Math.sin(t * 1.2) * 0.1;
-    grad.addColorStop(0, `rgba(139, 92, 246, ${pulse})`);
-    grad.addColorStop(0.45, `rgba(167, 139, 250, ${pulse * 0.7})`);
-    grad.addColorStop(0.8, `rgba(236, 72, 153, ${pulse * 0.35})`);
-    grad.addColorStop(1, `rgba(139, 92, 246, 0)`);
+    grad.addColorStop(0, `rgba(212, 160, 23, ${pulse})`);
+    grad.addColorStop(0.45, `rgba(245, 200, 66, ${pulse * 0.72})`);
+    grad.addColorStop(0.8, `rgba(205, 127, 50, ${pulse * 0.35})`);
+    grad.addColorStop(1, `rgba(212, 160, 23, 0)`);
   }
 
   ctx.beginPath();
@@ -313,7 +313,7 @@ function drawRipples(
     const alpha = (1 - phase) * 0.4 * audioLevel;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(236, 72, 153, ${alpha})`;
+    ctx.strokeStyle = `rgba(212, 160, 23, ${alpha})`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }

@@ -297,8 +297,8 @@ export default function ConversationPage() {
           <motion.div
             className="absolute top-14 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-2.5 rounded-full text-xs"
             style={{
-              background: "rgba(139,92,246,0.12)",
-              border: "1px solid rgba(139,92,246,0.35)",
+              background: "rgba(212,160,23,0.12)",
+              border: "1px solid rgba(212,160,23,0.35)",
               color: "rgba(255,255,255,0.7)",
               backdropFilter: "blur(12px)",
             }}
@@ -315,7 +315,7 @@ export default function ConversationPage() {
                 } catch { /* ignore */ }
                 router.refresh();
               }}
-              className="font-medium text-violet-400 hover:text-violet-300 transition-colors"
+              className="font-medium text-yellow-400 hover:text-yellow-300 transition-colors"
             >
               {language === "es" ? "Continuar" : "Resume"}
             </button>
@@ -370,8 +370,8 @@ export default function ConversationPage() {
                         <button key={opt} onClick={() => setConvLength(opt)}
                           className="flex flex-col items-center px-3 py-2.5 rounded-xl text-xs transition-all touch-manipulation"
                           style={{
-                            border: active ? "1px solid rgba(139,92,246,0.6)" : "1px solid rgba(255,255,255,0.08)",
-                            background: active ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.03)",
+                            border: active ? "1px solid rgba(212,160,23,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                            background: active ? "rgba(212,160,23,0.15)" : "rgba(255,255,255,0.03)",
                             color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
                             minHeight: 52, minWidth: 64,
                             WebkitTapHighlightColor: "transparent",
@@ -396,8 +396,8 @@ export default function ConversationPage() {
                         <button key={code} onClick={() => setLanguage(code)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs transition-all touch-manipulation"
                           style={{
-                            border: active ? "1px solid rgba(139,92,246,0.55)" : "1px solid rgba(255,255,255,0.08)",
-                            background: active ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.03)",
+                            border: active ? "1px solid rgba(212,160,23,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                            background: active ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.03)",
                             color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
                             minHeight: 38,
                             WebkitTapHighlightColor: "transparent",
@@ -415,8 +415,8 @@ export default function ConversationPage() {
               <button onClick={beginWithCountdown}
                 className="px-8 py-3 rounded-full text-white/70 text-sm font-light tracking-wider touch-manipulation"
                 style={{
-                  border: "1px solid rgba(139,92,246,0.25)",
-                  background: "rgba(139,92,246,0.1)",
+                  border: "1px solid rgba(212,160,23,0.25)",
+                  background: "rgba(212,160,23,0.1)",
                   minHeight: 44,
                   WebkitTapHighlightColor: "transparent",
                 }}
@@ -445,7 +445,7 @@ export default function ConversationPage() {
                   className="text-8xl font-extralight tabular-nums select-none"
                   style={{
                     color: "rgba(255,255,255,0.9)",
-                    textShadow: "0 0 60px rgba(139,92,246,0.5), 0 0 20px rgba(139,92,246,0.3)",
+                    textShadow: "0 0 60px rgba(212,160,23,0.5), 0 0 20px rgba(212,160,23,0.3)",
                   }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -528,14 +528,14 @@ export default function ConversationPage() {
                   <motion.button
                     className="flex items-center gap-2 px-5 py-3 rounded-full glass text-xs text-white/60 touch-manipulation"
                     style={{
-                      border: voice.state.isListening ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                      boxShadow: voice.state.isListening ? "0 0 20px rgba(139,92,246,0.15)" : "none",
+                      border: voice.state.isListening ? "1px solid rgba(212,160,23,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: voice.state.isListening ? "0 0 20px rgba(212,160,23,0.15)" : "none",
                       minHeight: 44, WebkitTapHighlightColor: "transparent",
                     }}
                     onClick={toggleListening} whileTap={{ scale: 0.95 }}
                   >
                     {voice.state.isListening
-                      ? <Mic className="w-4 h-4" style={{ color: "#8b5cf6" }} />
+                      ? <Mic className="w-4 h-4" style={{ color: "#d4a017" }} />
                       : <MicOff className="w-4 h-4 text-white/40" />}
                     <span>{voice.state.isListening
                       ? (language === "es" ? "Escuchando..." : "Listening...")
@@ -566,15 +566,15 @@ export default function ConversationPage() {
                     className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all disabled:opacity-40"
                     style={{ minHeight: 44, borderColor: "rgba(255,255,255,0.1)" }}
                     autoComplete="off" autoCorrect="off" spellCheck={false}
-                    onFocus={(e) => { e.target.style.borderColor = "rgba(139,92,246,0.5)"; }}
+                    onFocus={(e) => { e.target.style.borderColor = "rgba(212,160,23,0.5)"; }}
                     onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; }}
                   />
                   <motion.button onClick={submitTyped}
                     disabled={!typedMessage.trim() || isProcessing}
                     className="p-3 rounded-full transition-all touch-manipulation shrink-0 disabled:opacity-30"
                     style={{
-                      background: typedMessage.trim() && !isProcessing ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(139,92,246,0.3)",
+                      background: typedMessage.trim() && !isProcessing ? "rgba(212,160,23,0.3)" : "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(212,160,23,0.3)",
                       minHeight: 44, minWidth: 44, WebkitTapHighlightColor: "transparent",
                     }}
                     whileTap={{ scale: 0.92 }}
@@ -623,13 +623,13 @@ export default function ConversationPage() {
                 className="relative flex items-center gap-3 px-7 py-3.5 rounded-full font-light text-sm tracking-wider touch-manipulation transition-all duration-700"
                 style={{
                   background: canReveal
-                    ? `rgba(139,92,246,${0.08 + glowT * 0.2})`
+                    ? `rgba(212,160,23,${0.08 + glowT * 0.2})`
                     : "rgba(255,255,255,0.03)",
                   border: canReveal
-                    ? `1px solid rgba(139,92,246,${0.2 + glowT * 0.5})`
+                    ? `1px solid rgba(212,160,23,${0.2 + glowT * 0.5})`
                     : "1px solid rgba(255,255,255,0.06)",
                   boxShadow: glowT > 0.1
-                    ? `0 0 ${16 + glowT * 40}px rgba(139,92,246,${0.08 + glowT * 0.28})`
+                    ? `0 0 ${16 + glowT * 40}px rgba(212,160,23,${0.08 + glowT * 0.28})`
                     : "none",
                   color: canReveal ? `rgba(255,255,255,${0.5 + glowT * 0.45})` : "rgba(255,255,255,0.2)",
                   cursor: canReveal && !isProcessing ? "pointer" : "default",
@@ -644,7 +644,7 @@ export default function ConversationPage() {
                 {confidenceScore > 0 && (
                   <span
                     className="text-xs font-mono"
-                    style={{ color: canReveal ? `rgba(139,92,246,${0.55 + glowT * 0.45})` : "rgba(255,255,255,0.15)" }}
+                    style={{ color: canReveal ? `rgba(212,160,23,${0.55 + glowT * 0.45})` : "rgba(255,255,255,0.15)" }}
                   >
                     {confidenceScore}%
                   </span>
@@ -727,8 +727,8 @@ export default function ConversationPage() {
               }}
               className="px-8 py-3 rounded-full text-white/80 text-sm font-light tracking-wider touch-manipulation"
               style={{
-                background: "rgba(139,92,246,0.2)",
-                border: "1px solid rgba(139,92,246,0.5)",
+                background: "rgba(212,160,23,0.2)",
+                border: "1px solid rgba(212,160,23,0.5)",
                 minHeight: 48,
                 WebkitTapHighlightColor: "transparent",
               }}
@@ -782,7 +782,7 @@ export default function ConversationPage() {
 
 function StatusDot({ state, isListening }: { state: OrbState; isListening: boolean }) {
   const color =
-    state === "listening" ? "#8b5cf6"
+    state === "listening" ? "#d4a017"
     : state === "thinking" ? "#06b6d4"
     : state === "speaking" ? "#14b8a6"
     : "rgba(255,255,255,0.2)";

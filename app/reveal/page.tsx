@@ -169,7 +169,7 @@ function RevealContent() {
               "radial-gradient(ellipse 50% 45% at 90% 20%, rgba(16,185,129,0.038) 0%, transparent 65%)",
               "radial-gradient(ellipse 50% 50% at 15% 80%, rgba(34,211,238,0.035) 0%, transparent 65%)",
               "radial-gradient(ellipse 55% 45% at 85% 80%, rgba(168,85,247,0.04) 0%, transparent 65%)",
-              "radial-gradient(ellipse 70% 55% at 50% 35%, rgba(139,92,246,0.065) 0%, transparent 70%)",
+              "radial-gradient(ellipse 70% 55% at 50% 35%, rgba(212,160,23,0.065) 0%, transparent 70%)",
             ].join(", "),
           }}
         />
@@ -232,9 +232,9 @@ function RevealContent() {
             >
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.28)" }}
+                style={{ background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.28)" }}
               >
-                <Sparkles className="w-6 h-6" style={{ color: "#a78bfa" }} />
+                <Sparkles className="w-6 h-6" style={{ color: "#f5c842" }} />
               </div>
 
               <div className="space-y-2">
@@ -305,11 +305,11 @@ function RevealContent() {
                 <h1
                   className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight"
                   style={{
-                    background: "linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #f0abfc 100%)",
+                    background: "linear-gradient(135deg, #ffffff 0%, #fde68a 55%, #f5c842 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
-                    filter: "drop-shadow(0 0 24px rgba(139,92,246,0.4))",
+                    filter: "drop-shadow(0 0 24px rgba(212,160,23,0.4))",
                   }}
                 >
                   {synthesis.title}
@@ -323,9 +323,9 @@ function RevealContent() {
                 onClick={() => setPhase("expanded")}
                 className="flex items-center gap-2 px-7 py-3.5 sm:px-8 rounded-full text-white text-sm font-light tracking-wider transition-all touch-manipulation"
                 style={{
-                  background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.12))",
-                  border: "1px solid rgba(139,92,246,0.42)",
-                  boxShadow: "0 0 32px rgba(139,92,246,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+                  background: "linear-gradient(135deg, rgba(212,160,23,0.2), rgba(205,127,50,0.12))",
+                  border: "1px solid rgba(212,160,23,0.42)",
+                  boxShadow: "0 0 32px rgba(212,160,23,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
                   minHeight: 48,
                   WebkitTapHighlightColor: "transparent",
                 }}
@@ -360,13 +360,13 @@ function RevealContent() {
                 style={{
                   background:
                     "linear-gradient(rgba(6,4,18,0.97), rgba(6,4,18,0.97)) padding-box, " +
-                    "linear-gradient(135deg, #7c3aed 0%, #ec4899 33%, #22d3ee 66%, #a78bfa 100%) border-box",
+                    "linear-gradient(135deg, #d4a017 0%, #f5c842 33%, #cd7f32 66%, #fde68a 100%) border-box",
                   border: "1.5px solid transparent",
-                  boxShadow: "0 0 80px rgba(139,92,246,0.1), 0 24px 56px rgba(0,0,0,0.5)",
+                  boxShadow: "0 0 80px rgba(212,160,23,0.1), 0 24px 56px rgba(0,0,0,0.5)",
                 }}
               >
                 <div className="absolute inset-x-0 top-0 h-24 pointer-events-none"
-                  style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(139,92,246,0.06), transparent)" }}
+                  style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(212,160,23,0.06), transparent)" }}
                 />
 
                 <div className="relative px-5 pt-6 pb-5 sm:px-7 sm:pt-7">
@@ -381,11 +381,11 @@ function RevealContent() {
                   <h1
                     className="text-center text-2xl sm:text-3xl font-semibold leading-tight mb-2"
                     style={{
-                      background: "linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #f0abfc 100%)",
+                      background: "linear-gradient(135deg, #ffffff 0%, #fde68a 55%, #f5c842 100%)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       backgroundClip: "text",
-                      filter: "drop-shadow(0 0 20px rgba(139,92,246,0.35))",
+                      filter: "drop-shadow(0 0 20px rgba(212,160,23,0.35))",
                     }}
                   >
                     {synthesis.title}
@@ -446,14 +446,14 @@ function RevealContent() {
                   transition={{ delay: 0.64 }}
                   className="relative rounded-2xl overflow-hidden p-5 sm:p-6 text-center"
                   style={{
-                    background: "linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.08))",
-                    border: "1px solid rgba(139,92,246,0.3)",
-                    boxShadow: "0 0 40px rgba(139,92,246,0.08)",
+                    background: "linear-gradient(135deg, rgba(212,160,23,0.1), rgba(205,127,50,0.08))",
+                    border: "1px solid rgba(212,160,23,0.3)",
+                    boxShadow: "0 0 40px rgba(212,160,23,0.08)",
                   }}
                 >
                   <div
                     className="absolute inset-x-0 top-0 h-16 pointer-events-none"
-                    style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(139,92,246,0.08), transparent)" }}
+                    style={{ background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(212,160,23,0.08), transparent)" }}
                   />
                   <p className="text-[9px] tracking-[0.45em] uppercase text-white/30 mb-3">Don&apos;t lose this</p>
                   <h3 className="text-base font-medium text-white/90 mb-2">Save your Ikigai profile</h3>
@@ -464,9 +464,9 @@ function RevealContent() {
                     onClick={() => router.push("/auth/login?next=/reveal")}
                     className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-medium text-white transition-all touch-manipulation"
                     style={{
-                      background: "linear-gradient(135deg, rgba(139,92,246,0.35), rgba(139,92,246,0.22))",
-                      border: "1px solid rgba(139,92,246,0.55)",
-                      boxShadow: "0 0 24px rgba(139,92,246,0.18)",
+                      background: "linear-gradient(135deg, rgba(212,160,23,0.35), rgba(212,160,23,0.22))",
+                      border: "1px solid rgba(212,160,23,0.55)",
+                      boxShadow: "0 0 24px rgba(212,160,23,0.18)",
                       minHeight: 44,
                       WebkitTapHighlightColor: "transparent",
                     }}
@@ -483,9 +483,9 @@ function RevealContent() {
                 onClick={handleCareers}
                 className="group relative flex items-center gap-3 px-8 sm:px-10 py-4 rounded-full text-white font-light text-sm tracking-wider transition-all w-full sm:w-auto justify-center touch-manipulation overflow-hidden"
                 style={{
-                  background: "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(236,72,153,0.18))",
-                  border: "1px solid rgba(139,92,246,0.42)",
-                  boxShadow: "0 0 40px rgba(139,92,246,0.16), 0 8px 28px rgba(0,0,0,0.3)",
+                  background: "linear-gradient(135deg, rgba(212,160,23,0.25), rgba(205,127,50,0.18))",
+                  border: "1px solid rgba(212,160,23,0.42)",
+                  boxShadow: "0 0 40px rgba(212,160,23,0.16), 0 8px 28px rgba(0,0,0,0.3)",
                   minHeight: 52,
                   WebkitTapHighlightColor: "transparent",
                 }}
@@ -549,7 +549,7 @@ function CareerPathsSection({
 }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const PATH_COLORS = ["#06b6d4", "#a855f7", "#8b5cf6", "#10b981"];
+  const PATH_COLORS = ["#06b6d4", "#a855f7", "#d4a017", "#10b981"];
 
   return (
     <motion.div
@@ -574,7 +574,7 @@ function CareerPathsSection({
             key={idx}
             className="rounded-2xl overflow-hidden transition-all"
             style={{
-              background: isOpen ? `rgba(${color === "#06b6d4" ? "6,182,212" : color === "#a855f7" ? "168,85,247" : color === "#8b5cf6" ? "139,92,246" : "16,185,129"},0.05)` : "rgba(255,255,255,0.025)",
+              background: isOpen ? `rgba(${color === "#06b6d4" ? "6,182,212" : color === "#a855f7" ? "168,85,247" : color === "#d4a017" ? "139,92,246" : "16,185,129"},0.05)` : "rgba(255,255,255,0.025)",
               border: `1px solid ${isOpen ? color + "35" : "rgba(255,255,255,0.07)"}`,
             }}
           >
@@ -676,7 +676,7 @@ function IkigaiScoreCompact({ score, reasoning, detail }: { score: number; reaso
 
   const scoreColor =
     score >= 70 ? "#10b981" :
-    score >= 45 ? "#8b5cf6" :
+    score >= 45 ? "#d4a017" :
     "#e8845a";
 
   return (
@@ -864,13 +864,13 @@ function SectionList({
       key: "patterns",
       label: "Patterns We Observed",
       icon: TrendingUp,
-      color: "#8b5cf6",
+      color: "#d4a017",
       available: !!synthesis.patterns?.length,
       content: (
         <ul className="space-y-2.5 pt-1">
           {synthesis.patterns?.map((item, i) => (
             <li key={i} className="flex items-start gap-3">
-              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#8b5cf6" }} />
+              <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#d4a017" }} />
               <span className="text-sm text-white/65 font-light leading-relaxed">{item}</span>
             </li>
           ))}
@@ -958,20 +958,20 @@ function SectionList({
       key: "deepDive",
       label: "Deep Dive Q&A",
       icon: ChevronDown,
-      color: "#8b5cf6",
+      color: "#d4a017",
       available: !!synthesis.deepDive?.length,
       content: (
         <div className="space-y-2 pt-1">
           {synthesis.deepDive?.map((item, i) => {
             const isOpen = openDeepDive === i;
             return (
-              <div key={i} className="rounded-xl overflow-hidden" style={{ background: isOpen ? "rgba(139,92,246,0.04)" : "rgba(255,255,255,0.03)", border: isOpen ? "1px solid rgba(139,92,246,0.2)" : "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={i} className="rounded-xl overflow-hidden" style={{ background: isOpen ? "rgba(212,160,23,0.04)" : "rgba(255,255,255,0.03)", border: isOpen ? "1px solid rgba(212,160,23,0.2)" : "1px solid rgba(255,255,255,0.06)" }}>
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left touch-manipulation"
                   style={{ WebkitTapHighlightColor: "transparent", minHeight: 52 }}
                   onClick={() => setOpenDeepDive(isOpen ? null : i)}
                 >
-                  <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium" style={{ background: isOpen ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.07)", color: isOpen ? "rgba(139,92,246,0.95)" : "rgba(255,255,255,0.28)", border: isOpen ? "1px solid rgba(139,92,246,0.35)" : "1px solid rgba(255,255,255,0.09)" }}>{i + 1}</span>
+                  <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium" style={{ background: isOpen ? "rgba(212,160,23,0.2)" : "rgba(255,255,255,0.07)", color: isOpen ? "rgba(212,160,23,0.95)" : "rgba(255,255,255,0.28)", border: isOpen ? "1px solid rgba(212,160,23,0.35)" : "1px solid rgba(255,255,255,0.09)" }}>{i + 1}</span>
                   <span className="flex-1 text-sm text-white/70 font-light leading-snug pr-2">{item.heading}</span>
                   <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
                     <ChevronDown className="w-3.5 h-3.5 text-white/22" />
@@ -980,7 +980,7 @@ function SectionList({
                 <AnimatePresence>
                   {isOpen && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
-                      <p className="px-4 pb-4 text-sm text-white/50 font-light leading-relaxed pt-2" style={{ borderTop: "1px solid rgba(139,92,246,0.08)" }}>{item.detail}</p>
+                      <p className="px-4 pb-4 text-sm text-white/50 font-light leading-relaxed pt-2" style={{ borderTop: "1px solid rgba(212,160,23,0.08)" }}>{item.detail}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1015,7 +1015,7 @@ function SectionList({
       available: !!synthesis.explanation,
       content: (
         <div className="flex gap-4 pt-1">
-          <div className="shrink-0 w-0.5 rounded-full self-stretch" style={{ background: "linear-gradient(180deg, rgba(139,92,246,0.5), rgba(236,72,153,0.4), transparent)", minHeight: 40 }} />
+          <div className="shrink-0 w-0.5 rounded-full self-stretch" style={{ background: "linear-gradient(180deg, rgba(212,160,23,0.5), rgba(205,127,50,0.4), transparent)", minHeight: 40 }} />
           <div className="space-y-3.5">
             {synthesis.explanation?.split(/\n\n+/).filter(Boolean).map((para, i) => (
               <p key={i} className="text-[14px] text-white/55 font-light leading-[1.8]">{para}</p>
