@@ -109,7 +109,10 @@ export default function ProfileClient({ user, sessions: initialSessions }: Props
       .then((r) => r.json())
       .then((data) => {
         if (data.synthesis) {
-          router.push(`/reveal?data=${encodeURIComponent(JSON.stringify(data.synthesis))}`);
+          // Write to both storage layers so /reveal's existing read logic finds it
+          try { sessionStorage.setItem("ikigai_synthesis_result", JSON.stringify(data.synthesis)); } catch { /* ignore */ }
+          try { localStorage.setItem("ikigai_synthesis_result", JSON.stringify(data.synthesis)); } catch { /* ignore */ }
+          router.push("/reveal");
         }
       });
   }
