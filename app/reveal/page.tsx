@@ -805,12 +805,13 @@ function SectionList({
   onJobSearch: () => void;
   onCityQuests: () => void;
 }) {
-  const [openKey, setOpenKey] = useState<string | null>("futurePaths");
+  const [openKey, setOpenKey] = useState<string | null>("purposeLife");
   const [openDeepDive, setOpenDeepDive] = useState<number | null>(0);
 
   type SectionDef = {
     key: string;
     label: string;
+    sublabel?: string;
     icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
     color: string;
     available: boolean;
@@ -819,16 +820,8 @@ function SectionList({
 
   const sections: SectionDef[] = [
     {
-      key: "futurePaths",
-      label: "Future Paths",
-      icon: Map,
-      color: "#06b6d4",
-      available: !!synthesis.careerPaths?.length,
-      content: <CareerPathsSection paths={synthesis.careerPaths ?? []} onJobSearch={onJobSearch} />,
-    },
-    {
       key: "purposeLife",
-      label: "Purpose & Life",
+      label: "Life & Purpose",
       icon: Flame,
       color: "#f59e0b",
       available: !!synthesis.purposeAdvice?.length,
@@ -842,6 +835,15 @@ function SectionList({
           ))}
         </ul>
       ),
+    },
+    {
+      key: "futurePaths",
+      label: "Future Paths",
+      sublabel: "Tap to see careers built for you →",
+      icon: Map,
+      color: "#06b6d4",
+      available: !!synthesis.careerPaths?.length,
+      content: <CareerPathsSection paths={synthesis.careerPaths ?? []} onJobSearch={onJobSearch} />,
     },
     {
       key: "sideQuests",
@@ -1101,9 +1103,16 @@ function SectionList({
               >
                 <Icon className="w-3.5 h-3.5" style={{ color: isOpen ? section.color : "rgba(255,255,255,0.35)" }} />
               </span>
-              <span className="flex-1 text-sm font-light" style={{ color: isOpen ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.6)" }}>
-                {section.label}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-light" style={{ color: isOpen ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.6)" }}>
+                  {section.label}
+                </span>
+                {!isOpen && section.sublabel && (
+                  <p className="text-[10px] font-light mt-0.5" style={{ color: section.color, opacity: 0.7 }}>
+                    {section.sublabel}
+                  </p>
+                )}
+              </div>
               <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }} className="shrink-0">
                 <ChevronDown className="w-4 h-4" style={{ color: isOpen ? section.color : "rgba(255,255,255,0.18)" }} />
               </motion.div>
