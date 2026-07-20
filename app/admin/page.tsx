@@ -41,9 +41,22 @@ type AdminUser = {
   latest_language: "en" | "es";
 };
 
+type AnonUser = {
+  id: string;
+  sessions: SessionSummary[];
+  session_count: number;
+  latest_title: string | null;
+  latest_score: number | null;
+  latest_language: "en" | "es";
+  first_seen: string | null;
+  last_seen: string | null;
+};
+
 type AdminData = {
   users: AdminUser[];
+  anonymous_users: AnonUser[];
   total_users: number;
+  total_anonymous: number;
   total_sessions: number;
   sessions_with_data: number;
 };
@@ -272,18 +285,22 @@ function UserDetail({ user, onClose }: { user: AdminUser; onClose: () => void })
                             )}
 
                             {/* Session meta */}
-                            <div className="flex gap-4 text-[11px] text-white/30">
+                            <div className="flex flex-wrap gap-4 text-[11px] text-white/30">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 {fmtDate(s.created_at)}
                               </span>
+                              {s.messageCount !== null && (
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="w-3 h-3" />
+                                  {s.messageCount} messages
+                                </span>
+                              )}
                               <span className="flex items-center gap-1">
                                 <BarChart2 className="w-3 h-3" />
                                 Depth: {s.depth}
                               </span>
-                              {s.language === "es" && (
-                                <span className="flex items-center gap-1">🇪🇸 Spanish session</span>
-                              )}
+                              <span>{s.language === "es" ? "🇪🇸 Spanish" : "🇬🇧 English"}</span>
                             </div>
 
                             {/* Highlights */}
@@ -388,6 +405,100 @@ function UserDetail({ user, onClose }: { user: AdminUser; onClose: () => void })
   );
 }
 
+// ── Anonymous user row ───────────────────────────────────────────────────────
+function AnonRow({ anon, index }: { anon: AnonUser; index: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <motion.div
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: open ? "rgba(245,158,11,0.03)" : "rgba(255,255,255,0.02)",
+        border: open ? "1px solid rgba(245,158,11,0.2)" : "1px solid rgba(255,255,255,0.05)",
+      }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+    >
+      <button
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left touch-manipulation"
+        style={{ WebkitTapHighlightColor: "transparent" }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+          style={{ background: "rgba(245,158,11,0.1)" }}>
+          👤
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white/60 font-medium">Anonymous visitor</p>
+          {anon.latest_title && (
+            <p className="text-[11px] text-white/35 truncate mt-0.5">{anon.latest_title}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <ScoreRing score={anon.latest_score} size={30} />
+          <div className="hidden sm:flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-white/30">{anon.session_count} session{anon.session_count !== 1 ? "s" : ""}</span>
+              <span className="text-[10px]">{anon.latest_language === "es" ? "🇪🇸" : "🇬🇧"}</span>
+            </div>
+            {anon.last_seen && <span className="text-[10px] text-white/20">{fmtRelative(anon.last_seen)}</span>}
+          </div>
+          <ChevronDown className="w-3.5 h-3.5 text-white/20" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-2"
+              style={{ borderTop: "1px solid rgba(245,158,11,0.08)" }}>
+              {anon.sessions.map((s) => (
+                <div key={s.id} className="pt-3 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <ScoreRing score={s.score} size={28} />
+                    <div className="min-w-0">
+                      <p className="text-xs text-white/70 font-medium truncate">{s.title}</p>
+                      {s.subtitle && <p className="text-[11px] text-white/35 truncate">{s.subtitle}</p>}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 text-[11px] text-white/30">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />{fmtDate(s.created_at)}
+                    </span>
+                    {s.messageCount !== null && (
+                      <span className="flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" />{s.messageCount} messages
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <BarChart2 className="w-3 h-3" />depth {s.depth}
+                    </span>
+                    <span>{s.language === "es" ? "🇪🇸 ES" : "🇬🇧 EN"}</span>
+                  </div>
+                  {s.patterns.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {s.patterns.map((p, pi) => (
+                        <span key={pi} className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{ background: "rgba(245,158,11,0.08)", color: "#fbbf24" }}>{p}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 // ── Main dashboard ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const router = useRouter();
@@ -485,9 +596,9 @@ export default function AdminPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Total users", value: data.total_users, Icon: Users, color: "#a855f7" },
+                { label: "Signed-up users", value: data.total_users, Icon: Users, color: "#a855f7" },
+                { label: "Anonymous users", value: data.total_anonymous ?? 0, Icon: Globe, color: "#f59e0b" },
                 { label: "Total sessions", value: data.total_sessions, Icon: MessageSquare, color: "#06b6d4" },
-                { label: "Avg sessions/user", value: avgSessions, Icon: BarChart2, color: "#f59e0b" },
                 { label: "Avg Ikigai score", value: avgScore != null ? `${avgScore}%` : "—", Icon: Zap, color: "#10b981" },
               ].map(({ label, value, Icon, color }) => (
                 <motion.div key={label}
@@ -619,6 +730,24 @@ export default function AdminPage() {
                 ))}
               </div>
             </div>
+
+            {/* Anonymous users section */}
+            {(data.anonymous_users?.length ?? 0) > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <p className="text-[9px] tracking-[0.3em] uppercase text-white/25">Anonymous users</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full text-white/35"
+                    style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                    {data.anonymous_users.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {data.anonymous_users.map((anon, i) => (
+                    <AnonRow key={anon.id} anon={anon} index={i} />
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

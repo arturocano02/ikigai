@@ -187,6 +187,8 @@ export default function ConversationPage() {
       setOverlayLocked(true); // keep the dark overlay on screen during navigation
       sessionStorage.setItem("ikigai_session", JSON.stringify({
         messages: ikigai.messages,
+        messageCount: ikigai.messages.length,
+        language,
         progress: ikigai.progress,
         insights: ikigai.insights,
         currentFocus: ikigai.currentFocus,
@@ -364,18 +366,19 @@ export default function ConversationPage() {
           </motion.div>
         )}
 
-        {/* Stable below-orb zone — fixed min-height prevents orb from jumping between states */}
+        {/* Stable below-orb zone — mode="wait" ensures pre-start fully exits before countdown enters */}
         <div className="w-full flex flex-col items-center" style={{ minHeight: 240 }}>
+          <AnimatePresence mode="wait">
 
-          {/* Pre-start: length picker + begin */}
-          <AnimatePresence>
-            {!audioUnlocked && countdown === null && (
+            {/* Pre-start: honest note + language picker + begin */}
+            {!audioUnlocked && countdown === null ? (
               <motion.div
+                key="prestart"
                 className="mt-6 flex flex-col items-center gap-4 w-full"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ delay: 0.8 }}
+                transition={{ duration: 0.25 }}
               >
                 {isResume ? (
                   <p className="text-xs text-white/40 tracking-widest uppercase">Continuing your session</p>
@@ -387,6 +390,28 @@ export default function ConversationPage() {
                         ? "No es una entrevista. Responde con honestidad para obtener el mejor resultado."
                         : "This isn’t a job interview. Answer honestly for the most accurate results."}
                     </p>
+
+                    {/* Length picker */}
+                    <div className="flex items-center gap-2">
+                      {(["ultra", "short", "medium", "long"] as ConvLength[]).map((opt) => {
+                        const active = convLength === opt;
+                        return (
+                          <button key={opt} onClick={() => setConvLength(opt)}
+                            className="flex flex-col items-center px-3 py-2.5 rounded-xl text-xs transition-all touch-manipulation"
+                            style={{
+                              border: active ? "1px solid rgba(212,160,23,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                              background: active ? "rgba(212,160,23,0.15)" : "rgba(255,255,255,0.03)",
+                              color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+                              minHeight: 52, minWidth: 64,
+                              WebkitTapHighlightColor: "transparent",
+                            }}
+                          >
+                            <span className="font-medium tracking-wide">{LENGTH_META[opt].label}</span>
+                            <span className="mt-0.5 text-[10px] opacity-60">{LENGTH_META[opt].desc}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
 
                     {/* Language picker */}
                     <div className="flex items-center gap-1.5">
@@ -441,13 +466,11 @@ export default function ConversationPage() {
                   </button>
                 )}
               </motion.div>
-            )}
-          </AnimatePresence>
+            ) : countdown !== null ? (
 
-          {/* Countdown */}
-          <AnimatePresence>
-            {countdown !== null && (
+              /* Countdown — only appears after pre-start has fully exited */
               <motion.div
+                key="countdown"
                 className="mt-6 flex flex-col items-center gap-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -479,9 +502,9 @@ export default function ConversationPage() {
                     : "Mute the mic when you finish speaking. It helps the AI understand you better."}
                 </p>
               </motion.div>
-            )}
-          </AnimatePresence>
+            ) : null}
 
+          </AnimatePresence>
         </div>
 
         {/* Status label */}

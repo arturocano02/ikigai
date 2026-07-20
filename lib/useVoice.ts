@@ -103,7 +103,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         error: "Microphone access denied. Please allow microphone access.",
       }));
     }
-  }, [onTranscript]);
+  }, [onTranscript, language]);
 
   const stopListening = useCallback(() => {
     cancelAnimationFrame(levelRafRef.current);

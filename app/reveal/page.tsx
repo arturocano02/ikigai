@@ -71,35 +71,58 @@ function RevealContent() {
     }
   }, []);
 
+  function getConversationData(): object {
+    try {
+      const raw = sessionStorage.getItem("ikigai_session");
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return {};
+  }
+
   // Auto-save session to DB when user is signed in and synthesis is ready
   const savedToDbRef = useRef(false);
   useEffect(() => {
-    if (!isSignedIn || !synthesis || savedToDbRef.current) return;
+    if (isSignedIn === null || !synthesis || savedToDbRef.current) return;
     savedToDbRef.current = true;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) return;
-        let conversationData: object = {};
+
+    if (isSignedIn) {
+      // Signed-in: save under the user's real account
+      (async () => {
         try {
-          const raw = sessionStorage.getItem("ikigai_session");
-          if (raw) conversationData = JSON.parse(raw);
+          const supabase = createClient();
+          const { data: userData } = await supabase.auth.getUser();
+          if (!userData.user) return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error } = await supabase.from("ikigai_sessions").insert({
+            user_id: userData.user.id,
+            title: synthesis.title,
+            subtitle: synthesis.subtitle ?? null,
+            synthesis: synthesis as any,
+            conversation_data: getConversationData() as any,
+          });
+          if (error) console.warn("[reveal] session save failed:", error.message);
+          else {
+            try { localStorage.removeItem("ikigai_synthesis_result"); } catch { /* ignore */ }
+          }
         } catch { /* ignore */ }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await supabase.from("ikigai_sessions").insert({
-          user_id: userData.user.id,
-          title: synthesis.title,
-          subtitle: synthesis.subtitle ?? null,
-          synthesis: synthesis as any,
-          conversation_data: conversationData as any,
-        });
-        if (error) console.warn("[reveal] session save failed:", error.message);
-        else {
-          try { localStorage.removeItem("ikigai_synthesis_result"); } catch { /* ignore */ }
-        }
-      } catch { /* ignore */ }
-    })();
+      })();
+    } else {
+      // Anonymous: save with a stable anon ID so admin can track
+      (async () => {
+        try {
+          let anonId = localStorage.getItem("ikigai_anon_id");
+          if (!anonId) {
+            anonId = crypto.randomUUID();
+            localStorage.setItem("ikigai_anon_id", anonId);
+          }
+          await fetch("/api/track-anonymous", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ anonId, synthesis, conversationData: getConversationData() }),
+          });
+        } catch { /* ignore */ }
+      })();
+    }
   }, [isSignedIn, synthesis]);
 
   useEffect(() => {
