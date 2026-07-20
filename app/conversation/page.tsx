@@ -8,7 +8,7 @@ import { IkigaiMap } from "@/components/ikigai/IkigaiMap";
 import { useVoice } from "@/lib/useVoice";
 import { useIkigai, type SavedSession } from "@/lib/useIkigai";
 import { useResponsiveSize, useIsMobile } from "@/lib/useResponsiveSize";
-import { Mic, MicOff, Send, Keyboard, ArrowLeft } from "lucide-react";
+import { Mic, MicOff, Send, Keyboard, ArrowLeft, X } from "lucide-react";
 
 type ConvLength = "ultra" | "short" | "medium" | "long";
 
@@ -83,6 +83,8 @@ export default function ConversationPage() {
 
   const [localBackup, setLocalBackup] = useState<SavedSession | null>(null);
   const [showResumeBanner, setShowResumeBanner] = useState(false);
+  const [hasPreviousResult, setHasPreviousResult] = useState(false);
+  const [showMicHelp, setShowMicHelp] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -95,6 +97,13 @@ export default function ConversationPage() {
           setShowResumeBanner(true);
         }
       }
+    } catch { /* ignore */ }
+    try {
+      const hasResult = !!(
+        sessionStorage.getItem("ikigai_synthesis_result") ||
+        localStorage.getItem("ikigai_synthesis_result")
+      );
+      setHasPreviousResult(hasResult);
     } catch { /* ignore */ }
   }, []);
 
@@ -154,6 +163,11 @@ export default function ConversationPage() {
   useEffect(() => {
     speakRef.current = voice.speak;
   }, [voice.speak]);
+
+  // Auto-show mic help modal whenever a voice error surfaces
+  useEffect(() => {
+    if (voice.state.error) setShowMicHelp(true);
+  }, [voice.state.error]);
 
   // Cycle through labels while synthesizing
   useEffect(() => {
@@ -335,137 +349,140 @@ export default function ConversationPage() {
       {/* Orb + conversation pane */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 pt-14 pb-6 lg:py-10 relative z-10 min-h-[55dvh] lg:min-h-dvh">
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
-        >
-          <AiOrb
-            state={orbState}
-            size={orbSize}
-            audioLevel={voice.state.audioLevel}
-            onClick={audioUnlocked ? toggleListening : beginWithCountdown}
-          />
-        </motion.div>
+        {audioUnlocked && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
+          >
+            <AiOrb
+              state={orbState}
+              size={orbSize}
+              audioLevel={voice.state.audioLevel}
+              onClick={toggleListening}
+            />
+          </motion.div>
+        )}
 
-        {/* Pre-start: length picker + begin */}
-        <AnimatePresence>
-          {!audioUnlocked && countdown === null && (
-            <motion.div
-              className="mt-6 flex flex-col items-center gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              {isResume ? (
-                <p className="text-xs text-white/40 tracking-widest uppercase">Continuing your session</p>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  {/* Length picker */}
-                  <div className="flex items-center gap-2">
-                    {(["ultra", "short", "medium", "long"] as ConvLength[]).map((opt) => {
-                      const active = convLength === opt;
-                      return (
-                        <button key={opt} onClick={() => setConvLength(opt)}
-                          className="flex flex-col items-center px-3 py-2.5 rounded-xl text-xs transition-all touch-manipulation"
-                          style={{
-                            border: active ? "1px solid rgba(212,160,23,0.6)" : "1px solid rgba(255,255,255,0.08)",
-                            background: active ? "rgba(212,160,23,0.15)" : "rgba(255,255,255,0.03)",
-                            color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
-                            minHeight: 52, minWidth: 64,
-                            WebkitTapHighlightColor: "transparent",
-                          }}
-                        >
-                          <span className="font-medium tracking-wide">{LENGTH_META[opt].label}</span>
-                          <span className="mt-0.5 text-[10px] opacity-60">{LENGTH_META[opt].desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+        {/* Stable below-orb zone — fixed min-height prevents orb from jumping between states */}
+        <div className="w-full flex flex-col items-center" style={{ minHeight: 240 }}>
 
-                  {/* Language picker */}
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-[10px] text-white/20 tracking-widest uppercase mr-1">Language</p>
-                    {([
-                      { code: "en" as const, label: "English", flag: "🇬🇧" },
-                      { code: "es" as const, label: "Español", flag: "🇪🇸" },
-                    ]).map(({ code, label, flag }) => {
-                      const active = language === code;
-                      return (
-                        <button key={code} onClick={() => setLanguage(code)}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs transition-all touch-manipulation"
-                          style={{
-                            border: active ? "1px solid rgba(212,160,23,0.55)" : "1px solid rgba(255,255,255,0.08)",
-                            background: active ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.03)",
-                            color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
-                            minHeight: 38,
-                            WebkitTapHighlightColor: "transparent",
-                          }}
-                        >
-                          <span>{flag}</span>
-                          <span className="font-medium">{label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <button onClick={beginWithCountdown}
-                className="px-8 py-3 rounded-full text-white/70 text-sm font-light tracking-wider touch-manipulation"
-                style={{
-                  border: "1px solid rgba(212,160,23,0.25)",
-                  background: "rgba(212,160,23,0.1)",
-                  minHeight: 44,
-                  WebkitTapHighlightColor: "transparent",
-                }}
+          {/* Pre-start: length picker + begin */}
+          <AnimatePresence>
+            {!audioUnlocked && countdown === null && (
+              <motion.div
+                className="mt-6 flex flex-col items-center gap-4 w-full"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.8 }}
               >
-                {isResume
-                  ? (language === "es" ? "Continuar" : "Continue")
-                  : (language === "es" ? "Comenzar conversación" : "Begin conversation")}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {isResume ? (
+                  <p className="text-xs text-white/40 tracking-widest uppercase">Continuing your session</p>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    {/* Honest answer note */}
+                    <p className="text-center text-[11px] text-white/50 font-light leading-relaxed max-w-[240px]">
+                      {language === "es"
+                        ? "No es una entrevista. Responde con honestidad para obtener el mejor resultado."
+                        : "This isn’t a job interview. Answer honestly for the most accurate results."}
+                    </p>
 
-        {/* Countdown */}
-        <AnimatePresence>
-          {countdown !== null && (
-            <motion.div
-              className="mt-8 flex flex-col items-center gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={countdown}
-                  className="text-8xl font-extralight tabular-nums select-none"
+                    {/* Language picker */}
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[10px] text-white/20 tracking-widest uppercase mr-1">Language</p>
+                      {([
+                        { code: "en" as const, label: "English", flag: "🇬🇧" },
+                        { code: "es" as const, label: "Español", flag: "🇪🇸" },
+                      ]).map(({ code, label, flag }) => {
+                        const active = language === code;
+                        return (
+                          <button key={code} onClick={() => setLanguage(code)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs transition-all touch-manipulation"
+                            style={{
+                              border: active ? "1px solid rgba(212,160,23,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                              background: active ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.03)",
+                              color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+                              minHeight: 38,
+                              WebkitTapHighlightColor: "transparent",
+                            }}
+                          >
+                            <span>{flag}</span>
+                            <span className="font-medium">{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={beginWithCountdown}
+                  className="px-8 py-3 rounded-full text-white/70 text-sm font-light tracking-wider touch-manipulation"
                   style={{
-                    color: "rgba(255,255,255,0.9)",
-                    textShadow: "0 0 60px rgba(212,160,23,0.5), 0 0 20px rgba(212,160,23,0.3)",
+                    border: "1px solid rgba(212,160,23,0.25)",
+                    background: "rgba(212,160,23,0.1)",
+                    minHeight: 44,
+                    WebkitTapHighlightColor: "transparent",
                   }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
                 >
-                  {countdown}
-                </motion.span>
-              </AnimatePresence>
-              <p className="text-xs text-white/30 tracking-[0.3em] uppercase">
-                {language === "es" ? "Prepárate..." : "Get ready..."}
-              </p>
-              <p className="text-[11px] text-white/20 font-light text-center max-w-[200px] leading-relaxed">
-                {language === "es"
-                  ? "Tip: silenciarte cuando termines de hablar ayuda a la IA a entenderte mejor"
-                  : "Tip: muting yourself when you finish speaking helps the AI understand you better"}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  {isResume
+                    ? (language === "es" ? "Continuar" : "Continue")
+                    : (language === "es" ? "Comenzar conversación" : "Begin conversation")}
+                </button>
+
+                {/* Previous results shortcut */}
+                {hasPreviousResult && (
+                  <button
+                    onClick={() => router.push("/reveal")}
+                    className="text-[11px] text-white/30 hover:text-white/55 transition-colors touch-manipulation"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  >
+                    {language === "es" ? "Ver resultados anteriores →" : "View your previous results →"}
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Countdown */}
+          <AnimatePresence>
+            {countdown !== null && (
+              <motion.div
+                className="mt-6 flex flex-col items-center gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={countdown}
+                    className="text-8xl font-extralight tabular-nums select-none"
+                    style={{
+                      color: "rgba(255,255,255,0.9)",
+                      textShadow: "0 0 60px rgba(212,160,23,0.5), 0 0 20px rgba(212,160,23,0.3)",
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {countdown}
+                  </motion.span>
+                </AnimatePresence>
+                <p className="text-sm text-white/65 tracking-[0.2em] uppercase font-light">
+                  {language === "es" ? "Prepárate..." : "Get ready..."}
+                </p>
+                <p className="text-xs text-white/65 font-light text-center max-w-[220px] leading-relaxed">
+                  {language === "es"
+                    ? "Silencia el micrófono cuando termines de hablar. Así la IA te entiende mejor."
+                    : "Mute the mic when you finish speaking. It helps the AI understand you better."}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+        </div>
 
         {/* Status label */}
         <AnimatePresence>
@@ -603,10 +620,14 @@ export default function ConversationPage() {
         </AnimatePresence>
 
         {voice.state.error && (
-          <motion.p className="mt-3 text-xs text-red-400/70 max-w-[260px] text-center leading-relaxed"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            {voice.state.error}
-          </motion.p>
+          <motion.button
+            className="mt-3 text-xs text-red-400/70 max-w-[260px] text-center leading-relaxed underline underline-offset-2 touch-manipulation"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            onClick={() => setShowMicHelp(true)}
+          >
+            {language === "es" ? "Problema con el micrófono. Toca para solucionar." : "Microphone issue. Tap to fix."}
+          </motion.button>
         )}
 
         {/* Reveal Ikigai button — always visible once conversation starts, dims below 20% */}
@@ -773,6 +794,78 @@ export default function ConversationPage() {
                 {SYNTHESIS_STAGES[language][synthesisStageIdx]}
               </motion.p>
             </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mic help modal */}
+      <AnimatePresence>
+        {showMicHelp && (
+          <motion.div
+            className="fixed inset-0 z-[80] flex items-center justify-center p-5"
+            style={{ backdropFilter: "blur(12px)", background: "rgba(4,4,14,0.75)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMicHelp(false)}
+          >
+            <motion.div
+              className="relative w-full max-w-sm rounded-2xl p-6 flex flex-col gap-4"
+              style={{ background: "rgba(12,12,28,0.95)", border: "1px solid rgba(212,160,23,0.25)" }}
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowMicHelp(false)}
+                className="absolute top-4 right-4 text-white/30 hover:text-white/60 transition-colors touch-manipulation"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(212,160,23,0.15)", border: "1px solid rgba(212,160,23,0.3)" }}>
+                  <Mic className="w-4 h-4" style={{ color: "#d4a017" }} />
+                </div>
+                <h2 className="text-sm font-medium text-white/80">
+                  {language === "es" ? "Permitir acceso al micrófono" : "Allow microphone access"}
+                </h2>
+              </div>
+
+              <ol className="flex flex-col gap-2.5">
+                {(language === "es" ? [
+                  "Busca el icono de candado o cámara en la barra de direcciones del navegador.",
+                  "Haz clic en él y selecciona «Permitir» junto a Micrófono.",
+                  "Recarga la página y pulsa «Comenzar conversación» de nuevo.",
+                  "En iPhone/iPad: ve a Ajustes → Safari (o tu navegador) → Micrófono → Permitir.",
+                ] : [
+                  "Look for the lock or camera icon in your browser's address bar.",
+                  "Click it and set Microphone to \"Allow\".",
+                  "Reload the page and tap \"Begin conversation\" again.",
+                  "On iPhone/iPad: go to Settings → Safari (or your browser) → Microphone → Allow.",
+                ]).map((step, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0"
+                      style={{ background: "rgba(212,160,23,0.18)", color: "#d4a017" }}>
+                      {i + 1}
+                    </span>
+                    <p className="text-xs text-white/55 leading-relaxed">{step}</p>
+                  </li>
+                ))}
+              </ol>
+
+              <button
+                onClick={() => { setShowMicHelp(false); switchToText(); }}
+                className="mt-1 w-full py-3 rounded-xl text-xs text-white/50 hover:text-white/70 transition-colors touch-manipulation"
+                style={{ border: "1px solid rgba(255,255,255,0.08)", WebkitTapHighlightColor: "transparent" }}
+              >
+                {language === "es" ? "Continuar escribiendo en su lugar" : "Continue by typing instead"}
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
