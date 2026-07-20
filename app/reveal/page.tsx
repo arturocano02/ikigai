@@ -101,9 +101,6 @@ function RevealContent() {
             conversation_data: getConversationData() as any,
           });
           if (error) console.warn("[reveal] session save failed:", error.message);
-          else {
-            try { localStorage.removeItem("ikigai_synthesis_result"); } catch { /* ignore */ }
-          }
         } catch { /* ignore */ }
       })();
     } else {
@@ -501,9 +498,9 @@ function RevealContent() {
                 </motion.div>
               )}
 
-              {/* ── CTA: Careers ── */}
+              {/* ── CTA: Add more context (primary) ── */}
               <motion.button
-                onClick={handleCareers}
+                onClick={handleAddContext}
                 className="group relative flex items-center gap-3 px-8 sm:px-10 py-4 rounded-full text-white font-light text-sm tracking-wider transition-all w-full sm:w-auto justify-center touch-manipulation overflow-hidden"
                 style={{
                   background: "linear-gradient(135deg, rgba(212,160,23,0.25), rgba(205,127,50,0.18))",
@@ -525,31 +522,23 @@ function RevealContent() {
                   animate={{ x: ["-100%", "100%"] }}
                   transition={{ duration: 2.8, repeat: Infinity, ease: "linear", repeatDelay: 1.5 }}
                 />
-                <span className="relative">See Career Matches</span>
-                <ChevronRight className="relative w-4 h-4 transition-transform group-hover:translate-x-1" />
+                <MessageCircle className="relative w-4 h-4" />
+                <span className="relative">Add more context</span>
               </motion.button>
 
-              {/* ── Secondary actions ── */}
+              {/* ── Start over (faded) ── */}
               <motion.div
-                className="flex flex-col sm:flex-row items-center justify-center gap-3"
+                className="flex items-center justify-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
+                transition={{ delay: 0.85 }}
               >
                 <button
-                  onClick={handleAddContext}
-                  className="flex items-center gap-2 px-6 py-3 rounded-full text-white/55 text-sm font-light tracking-wide touch-manipulation transition-colors hover:text-white/80"
-                  style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", minHeight: 44, WebkitTapHighlightColor: "transparent" }}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Add more context</span>
-                </button>
-                <button
                   onClick={handleStartOver}
-                  className="flex items-center gap-2 px-6 py-3 rounded-full text-white/30 text-sm font-light tracking-wide touch-manipulation transition-colors hover:text-white/55"
-                  style={{ border: "1px solid rgba(255,255,255,0.06)", background: "transparent", minHeight: 44, WebkitTapHighlightColor: "transparent" }}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-full text-white/28 text-xs font-light tracking-wide touch-manipulation transition-colors hover:text-white/50"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3 h-3" />
                   <span>Start over</span>
                 </button>
               </motion.div>

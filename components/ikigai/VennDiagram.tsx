@@ -75,17 +75,20 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
 
   function getPopupItems(key: PopupKey): string[] {
     if (vennDetails && vennDetails[key]?.length) return vennDetails[key];
-    if (key === "love")  return quadrantItems?.love  ?? [];
-    if (key === "skill") return quadrantItems?.skill ?? [];
-    if (key === "world") return quadrantItems?.world ?? [];
-    if (key === "paid")  return quadrantItems?.paid  ?? [];
+    if (key === "love")       return quadrantItems?.love  ?? [];
+    if (key === "skill")      return quadrantItems?.skill ?? [];
+    if (key === "world")      return quadrantItems?.world ?? [];
+    if (key === "paid")       return quadrantItems?.paid  ?? [];
+    // Intersection fallback: combine the two relevant quadrants
+    if (key === "passion")    return [...(quadrantItems?.love  ?? []), ...(quadrantItems?.skill ?? [])];
+    if (key === "mission")    return [...(quadrantItems?.love  ?? []), ...(quadrantItems?.world ?? [])];
+    if (key === "profession") return [...(quadrantItems?.skill ?? []), ...(quadrantItems?.paid  ?? [])];
+    if (key === "vocation")   return [...(quadrantItems?.world ?? []), ...(quadrantItems?.paid  ?? [])];
+    if (key === "ikigai")     return [...(quadrantItems?.love  ?? []), ...(quadrantItems?.skill ?? [])].slice(0, 4);
     return [];
   }
 
   const popupItems = activePopup ? getPopupItems(activePopup) : [];
-
-  // Convert SVG coordinate to percentage
-  const pct = (n: number) => `${(n / 480) * 100}%`;
 
   return (
     <div className="relative w-full select-none">
@@ -124,44 +127,47 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
           <circle cx={170} cy={310} r={115} fill="none" stroke="#9b6dff" strokeWidth={5} strokeOpacity={0.06} />
           <circle cx={310} cy={310} r={115} fill="none" stroke="#f5c842" strokeWidth={5} strokeOpacity={0.06} />
 
-          {/* Circle labels */}
-          <text x={170} y={70} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
+          {/* Circle labels — placed in the exclusive (non-overlapping) zone of each circle */}
+          {/* LOVE: top-left exclusive zone ~(140, 100) */}
+          <text x={140} y={100} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
           {quadrantItems.love.slice(0, 2).map((item, i) => (
-            <text key={i} x={170} y={85 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+            <text key={i} x={140} y={115 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
           ))}
 
-          <text x={310} y={70} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
+          {/* SKILL: top-right exclusive zone ~(340, 100) */}
+          <text x={340} y={100} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
           {quadrantItems.skill.slice(0, 2).map((item, i) => (
-            <text key={i} x={310} y={85 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+            <text key={i} x={340} y={115 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
           ))}
 
-          <text x={170} y={407} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
+          {/* WORLD: bottom-left exclusive zone ~(140, 362) */}
+          <text x={140} y={362} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
           {quadrantItems.world.slice(0, 2).map((item, i) => (
-            <text key={i} x={170} y={421 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+            <text key={i} x={140} y={377 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
           ))}
 
-          <text x={310} y={407} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
+          {/* VALUE: bottom-right exclusive zone ~(340, 362) */}
+          <text x={340} y={362} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
           {quadrantItems.paid.slice(0, 2).map((item, i) => (
-            <text key={i} x={310} y={421 + i * 13} textAnchor="middle" fontSize={8} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
+            <text key={i} x={340} y={377 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
           ))}
 
-          {/* Intersection label hints */}
-          <text x={240} y={151} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "passion" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PASSION</text>
-          <text x={149} y={244} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "mission" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">MISSION</text>
-          <text x={331} y={244} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "profession" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PROFESSION</text>
-          <text x={240} y={337} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "vocation" ? 0.7 : 0.2} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">VOCATION</text>
+          {/* Intersection label hints — slightly visible so users know they're tappable */}
+          <text x={240} y={151} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "passion" ? 0.75 : 0.32} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PASSION</text>
+          <text x={149} y={244} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "mission" ? 0.75 : 0.32} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">MISSION</text>
+          <text x={331} y={244} textAnchor="middle" fontSize={6} fill="white" fillOpacity={hovered === "profession" ? 0.75 : 0.32} fontFamily="system-ui,sans-serif" letterSpacing="0.04em">PROFESSION</text>
+          <text x={240} y={337} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "vocation" ? 0.75 : 0.32} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">VOCATION</text>
 
-          {/* Center IKIGAI ring */}
-          <circle cx={240} cy={240} r={24} fill="rgba(212,160,23,0.12)" stroke="rgba(212,160,23,0.4)" strokeWidth={1.2} />
-          <circle cx={240} cy={240} r={4.5} fill="rgba(212,160,23,0.8)" />
-          <text x={240} y={273} textAnchor="middle" fontSize={7} fill="#d4a017" fillOpacity={0.7} fontFamily="system-ui,sans-serif" fontWeight="700" letterSpacing="0.1em">IKIGAI</text>
+          {/* Center IKIGAI ring — text inside the ring */}
+          <circle cx={240} cy={240} r={26} fill="rgba(212,160,23,0.14)" stroke="rgba(212,160,23,0.45)" strokeWidth={1.2} />
+          <text x={240} y={244} textAnchor="middle" fontSize={7} fill="#d4a017" fillOpacity={0.85} fontFamily="system-ui,sans-serif" fontWeight="700" letterSpacing="0.1em">IKIGAI</text>
         </svg>
 
         {/* Full-coverage clickable SVG overlay — one path per region */}
         <svg
           viewBox="0 0 480 480"
           xmlns="http://www.w3.org/2000/svg"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
           aria-hidden="true"
         >
           {/* Circle hit zones — large circles */}
@@ -169,7 +175,7 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
             <circle
               key={key}
               cx={cx} cy={cy} r={90}
-              fill="transparent"
+              fill="rgba(0,0,0,0.001)"
               style={{ cursor: "pointer" }}
               onClick={() => setActivePopup(key)}
               onMouseEnter={() => setHovered(key)}
@@ -184,7 +190,7 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
             <circle
               key={key}
               cx={cx} cy={cy} r={32}
-              fill="transparent"
+              fill="rgba(0,0,0,0.001)"
               style={{ cursor: "pointer" }}
               onClick={() => setActivePopup(key)}
               onMouseEnter={() => setHovered(key)}
@@ -197,7 +203,7 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
           {/* Center IKIGAI hit zone */}
           <circle
             cx={240} cy={240} r={28}
-            fill="transparent"
+            fill="rgba(0,0,0,0.001)"
             style={{ cursor: "pointer" }}
             onClick={() => setActivePopup("ikigai")}
             onMouseEnter={() => setHovered("ikigai")}
@@ -229,16 +235,21 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
             />
 
             {/* Dialog — centered with flexbox, no transform animation conflicts */}
-            <div className="fixed inset-0 z-[61] flex items-center justify-center px-4 pointer-events-none">
+            <div
+              className="fixed inset-0 z-[61] flex items-center justify-center px-4"
+              onClick={() => setActivePopup(null)}
+            >
               <motion.div
-                className="w-full rounded-3xl overflow-hidden pointer-events-auto"
+                className="w-full rounded-3xl"
                 style={{
+                  overflow: "hidden",
                   maxWidth: 420,
                   background: "linear-gradient(160deg, #13121e 0%, #0c0b16 100%)",
                   border: `1px solid ${meta.color}35`,
                   boxShadow: `0 0 60px ${meta.color}18, 0 24px 56px rgba(0,0,0,0.6)`,
                   maxHeight: "80vh",
                 }}
+                onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.93 }}
