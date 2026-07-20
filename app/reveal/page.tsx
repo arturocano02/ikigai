@@ -195,20 +195,20 @@ function RevealContent() {
         />
       </div>
 
-      {/* Back button */}
+      {/* Back button — fixed pill, floats above the share card */}
       <button
         onClick={() => router.back()}
-        className="absolute top-5 left-5 z-20 flex items-center gap-1.5 text-white/25 hover:text-white/55 transition-colors touch-manipulation"
-        style={{ minHeight: 40, WebkitTapHighlightColor: "transparent" }}
+        className="fixed top-4 left-4 z-30 flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors touch-manipulation rounded-full px-3 py-1.5"
+        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", minHeight: 36, WebkitTapHighlightColor: "transparent" }}
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        <span className="text-xs tracking-wider">Back</span>
+        <span className="text-xs tracking-wide">Back</span>
       </button>
 
       <div
         className={`relative z-10 w-full flex flex-col items-center px-4 sm:px-6
           ${phase === "expanded"
-            ? "pt-12 pb-20 sm:pt-16 sm:pb-24"
+            ? "pt-16 pb-20 sm:pt-20 sm:pb-24"
             : "min-h-dvh justify-center py-16"
           }`}
       >
