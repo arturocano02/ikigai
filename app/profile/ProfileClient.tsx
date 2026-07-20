@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, LogOut, Trash2, ChevronRight, Clock, Sparkles } from "lucide-react";
+import { ArrowLeft, LogOut, Trash2, ChevronRight, Clock, Sparkles, LayoutDashboard } from "lucide-react";
 import type { IkigaiSynthesis } from "@/types/ikigai";
 
 interface SavedSession {
@@ -258,6 +258,23 @@ export default function ProfileClient({ user, sessions: initialSessions }: Props
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/25 mb-4">Account</p>
+
+          {user.email === "arturocanobusi@gmail.com" && (
+            <button
+              onClick={() => router.push("/admin")}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-light transition-all mb-1"
+              style={{
+                background: "linear-gradient(135deg, rgba(212,160,23,0.12), rgba(205,127,50,0.08))",
+                border: "1px solid rgba(212,160,23,0.3)",
+                color: "rgba(212,160,23,0.85)",
+                minHeight: 48,
+              }}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Admin Dashboard</span>
+              <ChevronRight className="w-4 h-4 ml-auto opacity-50" />
+            </button>
+          )}
 
           <button
             onClick={handleSignOut}

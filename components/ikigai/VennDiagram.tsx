@@ -127,30 +127,30 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
           <circle cx={170} cy={310} r={115} fill="none" stroke="#9b6dff" strokeWidth={5} strokeOpacity={0.06} />
           <circle cx={310} cy={310} r={115} fill="none" stroke="#f5c842" strokeWidth={5} strokeOpacity={0.06} />
 
-          {/* Circle labels — placed in the exclusive (non-overlapping) zone of each circle */}
-          {/* LOVE: top-left exclusive zone ~(140, 100) */}
-          <text x={140} y={100} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
+          {/* Labels outside circles, items inside the exclusive (non-overlapping) top/bottom zone */}
+          {/* LOVE — label above circle, items inside top-left zone */}
+          <text x={170} y={48} textAnchor="middle" fontSize={9.5} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">LOVE</text>
           {quadrantItems.love.slice(0, 2).map((item, i) => (
-            <text key={i} x={140} y={115 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
+            <text key={i} x={170} y={70 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* SKILL: top-right exclusive zone ~(340, 100) */}
-          <text x={340} y={100} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
+          {/* SKILL — label above circle, items inside top-right zone */}
+          <text x={310} y={48} textAnchor="middle" fontSize={9.5} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">SKILL</text>
           {quadrantItems.skill.slice(0, 2).map((item, i) => (
-            <text key={i} x={340} y={115 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
+            <text key={i} x={310} y={70 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
 
-          {/* WORLD: bottom-left exclusive zone ~(140, 362) */}
-          <text x={140} y={362} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
+          {/* WORLD — items inside bottom-left zone, label below circle */}
           {quadrantItems.world.slice(0, 2).map((item, i) => (
-            <text key={i} x={140} y={377 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
+            <text key={i} x={170} y={397 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
+          <text x={170} y={430} textAnchor="middle" fontSize={9.5} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">WORLD</text>
 
-          {/* VALUE: bottom-right exclusive zone ~(340, 362) */}
-          <text x={340} y={362} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
+          {/* VALUE — items inside bottom-right zone, label below circle */}
           {quadrantItems.paid.slice(0, 2).map((item, i) => (
-            <text key={i} x={340} y={377 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 16)}</text>
+            <text key={i} x={310} y={397 + i * 14} textAnchor="middle" fontSize={7.5} fill="white" fillOpacity={0.65} fontFamily="system-ui,sans-serif">{trunc(item, 18)}</text>
           ))}
+          <text x={310} y={430} textAnchor="middle" fontSize={9.5} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.12em" fontFamily="system-ui,sans-serif">VALUE</text>
 
           {/* Intersection label hints — slightly visible so users know they're tappable */}
           <text x={240} y={151} textAnchor="middle" fontSize={7} fill="white" fillOpacity={hovered === "passion" ? 0.75 : 0.32} fontFamily="system-ui,sans-serif" letterSpacing="0.06em">PASSION</text>
