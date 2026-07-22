@@ -119,7 +119,7 @@ type AdminData = {
   total_anonymous: number;
   total_sessions: number;
   sessions_with_data: number;
-  funnel: { page_view: number; conversation_start: number; reveal_view: number; mic_error: number };
+  funnel: { page_view: number; conversation_start: number; reveal_view: number; mic_error: number; tts_fallback: number };
   recent_events: Array<{ event: string; anon_id: string | null; metadata: Record<string, string> | null; created_at: string }>;
 };
 
@@ -714,11 +714,18 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-3.5 h-3.5 text-white/25" />
                   <p className="text-[10px] tracking-[0.3em] uppercase text-white/25">Conversion Funnel</p>
-                  {data.funnel.mic_error > 0 && (
-                    <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.1)", color: "rgba(248,113,113,0.7)", border: "1px solid rgba(248,113,113,0.2)" }}>
-                      ⚠ {data.funnel.mic_error} mic errors
-                    </span>
-                  )}
+                  <div className="ml-auto flex items-center gap-1.5">
+                    {data.funnel.tts_fallback > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.1)", color: "rgba(251,191,36,0.7)", border: "1px solid rgba(251,191,36,0.2)" }}>
+                        {data.funnel.tts_fallback} voice fallbacks
+                      </span>
+                    )}
+                    {data.funnel.mic_error > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.1)", color: "rgba(248,113,113,0.7)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                        ⚠ {data.funnel.mic_error} mic errors
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-end gap-2">
                   {[

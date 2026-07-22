@@ -12,7 +12,7 @@ function getAnonId(): string {
 }
 
 export function trackEvent(
-  event: "page_view" | "conversation_start" | "reveal_view" | "mic_error",
+  event: "page_view" | "conversation_start" | "reveal_view" | "mic_error" | "tts_fallback",
   metadata?: Record<string, string>
 ) {
   try {

@@ -8,6 +8,8 @@ export interface VoiceState {
   audioLevel: number;
   transcript: string;
   error: string | null;
+  /** Which TTS engine is currently being used. null = not speaking yet. */
+  ttsMode: "elevenlabs" | "browser" | null;
 }
 
 export function useVoice(onTranscript: (text: string) => void, language: "en" | "es" = "en") {
@@ -17,6 +19,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
     audioLevel: 0,
     transcript: "",
     error: null,
+    ttsMode: null,
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -162,7 +165,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         try { recognitionRef.current.stop(); } catch { /* ignore */ }
       }
 
-      setState((s) => ({ ...s, isSpeaking: true }));
+      setState((s) => ({ ...s, isSpeaking: true, ttsMode: null }));
 
       const resumeRecognition = () => {
         pausedForSpeechRef.current = false;
@@ -180,25 +183,26 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         if (resolved) return;
         resolved = true;
         if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
-        setState((s) => ({ ...s, isSpeaking: false }));
+        setState((s) => ({ ...s, isSpeaking: false, ttsMode: null }));
         resumeRecognition();
         onEnd?.();
         resolve();
       };
 
-      // Give ElevenLabs 6s before giving up — avoids the race where TTS starts
-      // listening and then ElevenLabs audio arrives late and plays into the open mic
+      // Give ElevenLabs 10s before giving up — Vercel cold start + ElevenLabs can be slow
       loadTimeoutId = setTimeout(() => {
         if (resolved) return;
-        console.warn("[voice] audio load timeout — carrying on with conversation");
-        abortCtrl.abort(); // cancel any in-flight fetch so it can't play later
+        console.warn("[voice] ElevenLabs timeout — falling back to browser TTS");
+        abortCtrl.abort(); // cancel in-flight fetch so it can't play after fallback ends
         if (currentAudioRef.current) {
           currentAudioRef.current.pause();
           currentAudioRef.current = null;
         }
         window.speechSynthesis?.cancel();
-        finish();
-      }, 6000);
+        // Run fallback TTS so the user still hears the response
+        setState((s) => ({ ...s, ttsMode: "browser" }));
+        fallbackTTS(text, finish, language);
+      }, 10000);
 
       // Try ElevenLabs first
       try {
@@ -218,12 +222,13 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
           currentAudioRef.current = audio;
+          setState((s) => ({ ...s, ttsMode: "elevenlabs" }));
           // 350ms buffer: lets speakers fully clear before mic re-opens to prevent feedback
           audio.onended = () => { URL.revokeObjectURL(url); setTimeout(finish, 350); };
           audio.onerror = () => {
             URL.revokeObjectURL(url);
-            console.error("[voice] ElevenLabs audio failed to play, falling back to browser TTS");
-            if (!resolved) fallbackTTS(text, finish, language);
+            console.error("[voice] ElevenLabs audio playback error, falling back to browser TTS");
+            if (!resolved) { setState((s) => ({ ...s, ttsMode: "browser" })); fallbackTTS(text, finish, language); }
           };
           await audio.play();
           // Audio is playing — clear the load timeout so it plays to completion
@@ -231,14 +236,14 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           return;
         } else {
           const body = await res.text().catch(() => "");
-          console.error(`[voice] /api/speak returned ${res.status}, falling back to browser TTS:`, body);
+          console.error(`[voice] ElevenLabs ${res.status} — falling back to browser TTS:`, body);
         }
       } catch (err) {
-        if ((err as Error).name === "AbortError") return; // intentional abort — timeout already called finish()
-        console.error("[voice] /api/speak request failed, falling back to browser TTS:", err);
+        if ((err as Error).name === "AbortError") return; // intentional abort — timeout handler took over
+        console.error("[voice] ElevenLabs fetch failed, falling back to browser TTS:", err);
       }
 
-      if (!resolved) fallbackTTS(text, finish, language);
+      if (!resolved) { setState((s) => ({ ...s, ttsMode: "browser" })); fallbackTTS(text, finish, language); }
     });
   }, [language]);
 

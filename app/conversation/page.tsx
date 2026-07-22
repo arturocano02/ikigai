@@ -178,6 +178,15 @@ export default function ConversationPage() {
     }
   }, [voice.state.error]);
 
+  // Track when ElevenLabs fails and browser TTS takes over
+  const prevTtsModeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (voice.state.ttsMode === "browser" && prevTtsModeRef.current !== "browser") {
+      trackEvent("tts_fallback", { reason: "elevenlabs_failed" });
+    }
+    prevTtsModeRef.current = voice.state.ttsMode;
+  }, [voice.state.ttsMode]);
+
   // Cycle through labels while synthesizing
   useEffect(() => {
     if (ikigai.phase !== "synthesizing" && !overlayLocked) return;
@@ -655,20 +664,27 @@ export default function ConversationPage() {
           )}
         </AnimatePresence>
 
-        {/* Mic status pill — always visible when voice mode is active */}
-        {inputMode === "voice" && hasStarted && (
+        {/* Voice status pill — visible whenever voice mode is active */}
+        {inputMode === "voice" && (audioUnlocked || voice.state.error) && (
           <button
-            onClick={() => voice.state.error && setShowMicHelp(true)}
+            onClick={() => voice.state.error ? setShowMicHelp(true) : undefined}
             className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation"
             style={{
               background: voice.state.error
-                ? "rgba(248,113,113,0.1)"
+                ? "rgba(248,113,113,0.12)"
+                : voice.state.ttsMode === "browser"
+                ? "rgba(251,191,36,0.1)"
                 : voice.state.isListening && voice.state.audioLevel > 0.08
                 ? "rgba(34,197,94,0.1)"
                 : voice.state.isListening
                 ? "rgba(255,255,255,0.05)"
                 : "rgba(255,255,255,0.03)",
-              border: `1px solid ${voice.state.error ? "rgba(248,113,113,0.3)" : voice.state.isListening && voice.state.audioLevel > 0.08 ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.08)"}`,
+              border: `1px solid ${
+                voice.state.error ? "rgba(248,113,113,0.35)"
+                : voice.state.ttsMode === "browser" ? "rgba(251,191,36,0.25)"
+                : voice.state.isListening && voice.state.audioLevel > 0.08 ? "rgba(34,197,94,0.25)"
+                : "rgba(255,255,255,0.08)"
+              }`,
               cursor: voice.state.error ? "pointer" : "default",
               WebkitTapHighlightColor: "transparent",
             }}
@@ -676,23 +692,27 @@ export default function ConversationPage() {
             <span
               className="w-2 h-2 rounded-full shrink-0"
               style={{
-                background: voice.state.error
-                  ? "#f87171"
-                  : voice.state.isListening && voice.state.audioLevel > 0.08
-                  ? "#22c55e"
-                  : voice.state.isListening
-                  ? "#facc15"
+                background: voice.state.error ? "#f87171"
+                  : voice.state.ttsMode === "browser" ? "#fbbf24"
+                  : voice.state.isListening && voice.state.audioLevel > 0.08 ? "#22c55e"
+                  : voice.state.isListening ? "#facc15"
                   : "rgba(255,255,255,0.2)",
                 boxShadow: voice.state.isListening && !voice.state.error && voice.state.audioLevel > 0.08
-                  ? "0 0 6px #22c55e"
-                  : "none",
+                  ? "0 0 6px #22c55e" : "none",
               }}
             />
             <span className="text-[10px] tracking-wide" style={{
-              color: voice.state.error ? "#f87171" : voice.state.isListening ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.2)",
+              color: voice.state.error ? "#f87171"
+                : voice.state.ttsMode === "browser" ? "#fbbf24"
+                : voice.state.isListening ? "rgba(255,255,255,0.45)"
+                : "rgba(255,255,255,0.2)",
             }}>
               {voice.state.error
                 ? (language === "es" ? "Error de micrófono · toca para solucionar" : "Mic error · tap to fix")
+                : voice.state.ttsMode === "browser"
+                ? (language === "es" ? "Usando voz del dispositivo" : "Using device voice")
+                : voice.state.isSpeaking
+                ? (language === "es" ? "Hablando..." : "Speaking...")
                 : voice.state.isListening && voice.state.audioLevel > 0.08
                 ? (language === "es" ? "Escuchando" : "Hearing you")
                 : voice.state.isListening

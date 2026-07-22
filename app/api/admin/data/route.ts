@@ -145,7 +145,7 @@ export async function GET() {
   );
 
   // 5. Conversion funnel from analytics_events (best-effort — table may not exist yet)
-  let funnel = { page_view: 0, conversation_start: 0, reveal_view: 0, mic_error: 0 };
+  let funnel = { page_view: 0, conversation_start: 0, reveal_view: 0, mic_error: 0, tts_fallback: 0 };
   let recentEvents: Array<{ event: string; anon_id: string | null; metadata: Record<string, string> | null; created_at: string }> = [];
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
