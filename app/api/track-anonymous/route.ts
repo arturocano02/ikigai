@@ -25,9 +25,10 @@ export async function POST(request: Request) {
 
   const admin = adminSupabase();
 
-  // Use "anon_<id>" as the user_id to distinguish from real auth users
+  // user_id must be a valid UUID; anon_id carries the real identifier
   const { error } = await admin.from("ikigai_sessions").insert({
-    user_id: `anon_${anonId}`,
+    user_id: crypto.randomUUID(),
+    anon_id: anonId,
     title: synthesis.title,
     subtitle: synthesis.subtitle ?? null,
     synthesis: synthesis as unknown as Json,

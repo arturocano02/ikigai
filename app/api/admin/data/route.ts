@@ -24,7 +24,7 @@ function synthesisDepth(synthesis: Record<string, unknown>): number {
 }
 
 function extractSession(s: {
-  id: string; user_id: string; title: string; subtitle: string | null;
+  id: string; user_id: string; anon_id?: string | null; title: string; subtitle: string | null;
   synthesis: unknown; conversation_data: unknown; created_at: string;
 }) {
   const synth = (s.synthesis ?? {}) as Record<string, unknown>;
@@ -76,14 +76,14 @@ export async function GET() {
   // 4. Fetch ALL sessions
   const { data: sessions } = await admin
     .from("ikigai_sessions")
-    .select("id, user_id, title, subtitle, synthesis, conversation_data, created_at")
+    .select("id, user_id, anon_id, title, subtitle, synthesis, conversation_data, created_at")
     .order("created_at", { ascending: false });
 
   const allSessions = sessions ?? [];
 
-  // Split: real auth sessions vs anonymous (user_id starts with "anon_")
-  const authSessionsRaw = allSessions.filter((s) => !s.user_id.startsWith("anon_"));
-  const anonSessionsRaw = allSessions.filter((s) => s.user_id.startsWith("anon_"));
+  // Split: real auth sessions vs anonymous (anon_id column is set for anon sessions)
+  const authSessionsRaw = allSessions.filter((s) => !s.anon_id);
+  const anonSessionsRaw = allSessions.filter((s) => !!s.anon_id);
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
   const sessionsByUser = new Map<string, typeof authSessionsRaw>();
@@ -120,15 +120,16 @@ export async function GET() {
   // Group anonymous sessions by anon_id
   const anonByKey = new Map<string, typeof anonSessionsRaw>();
   for (const s of anonSessionsRaw) {
-    if (!anonByKey.has(s.user_id)) anonByKey.set(s.user_id, []);
-    anonByKey.get(s.user_id)!.push(s);
+    const key = s.anon_id ?? s.user_id;
+    if (!anonByKey.has(key)) anonByKey.set(key, []);
+    anonByKey.get(key)!.push(s);
   }
 
-  const anonymous_users = Array.from(anonByKey.entries()).map(([, userSessions]) => {
+  const anonymous_users = Array.from(anonByKey.entries()).map(([anonKey, userSessions]) => {
     const parsed = userSessions.map(extractSession);
     const last = parsed[0];
     return {
-      id: userSessions[0].user_id,
+      id: anonKey,
       sessions: parsed,
       session_count: parsed.length,
       latest_title: last?.title ?? null,
@@ -147,8 +148,8 @@ export async function GET() {
   let funnel = { page_view: 0, conversation_start: 0, reveal_view: 0, mic_error: 0 };
   let recentEvents: Array<{ event: string; anon_id: string | null; metadata: Record<string, string> | null; created_at: string }> = [];
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: eventRows } = await (admin as any).from("analytics_events")
+    const { data: eventRows } = await admin
+      .from("analytics_events")
       .select("event, anon_id, metadata, created_at")
       .order("created_at", { ascending: false })
       .limit(500);

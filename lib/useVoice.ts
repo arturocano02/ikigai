@@ -28,8 +28,13 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   // Tracks everything spoken so far (final + interim) so manual stop can flush it
   const pendingTranscriptRef = useRef<string>("");
+  // Prevents onend from restarting when we intentionally stopped
+  const intentionalStopRef = useRef(false);
+  // Prevents onend from restarting while AI is speaking (paused to avoid feedback)
+  const pausedForSpeechRef = useRef(false);
 
   const startListening = useCallback(async () => {
+    intentionalStopRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -93,6 +98,13 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           }
         };
 
+        // Restart recognition if it ends unexpectedly (browser timeout, tab blur, etc.)
+        rec.onend = () => {
+          if (!intentionalStopRef.current && !pausedForSpeechRef.current && streamRef.current) {
+            try { rec.start(); } catch { /* ignore — stream may have ended */ }
+          }
+        };
+
         rec.start();
         recognitionRef.current = rec;
       }
@@ -108,6 +120,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
 
   const stopListening = useCallback(() => {
     cancelAnimationFrame(levelRafRef.current);
+    intentionalStopRef.current = true;
 
     // Flush any pending speech before tearing down
     const pending = pendingTranscriptRef.current.trim();
@@ -143,7 +156,20 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
       }
       window.speechSynthesis?.cancel();
 
+      // Pause recognition while AI speaks so its audio isn't captured as user input
+      pausedForSpeechRef.current = true;
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch { /* ignore */ }
+      }
+
       setState((s) => ({ ...s, isSpeaking: true }));
+
+      const resumeRecognition = () => {
+        pausedForSpeechRef.current = false;
+        if (recognitionRef.current && !intentionalStopRef.current && streamRef.current) {
+          try { recognitionRef.current.start(); } catch { /* already running */ }
+        }
+      };
 
       let resolved = false;
       let loadTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -155,6 +181,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         resolved = true;
         if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
         setState((s) => ({ ...s, isSpeaking: false }));
+        resumeRecognition();
         onEnd?.();
         resolve();
       };
