@@ -87,7 +87,8 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rec.onerror = (e: any) => {
-          if (e.error !== "no-speech") {
+          // "no-speech" and "aborted" are both expected/normal — never surface them
+          if (e.error !== "no-speech" && e.error !== "aborted") {
             setState((s) => ({ ...s, error: e.error }));
           }
         };

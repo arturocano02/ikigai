@@ -9,6 +9,7 @@ import { useVoice } from "@/lib/useVoice";
 import { useIkigai, type SavedSession } from "@/lib/useIkigai";
 import { useResponsiveSize, useIsMobile } from "@/lib/useResponsiveSize";
 import { Mic, MicOff, Send, Keyboard, ArrowLeft, X } from "lucide-react";
+import { trackEvent } from "@/lib/track";
 
 type ConvLength = "ultra" | "short" | "medium" | "long";
 
@@ -131,6 +132,7 @@ export default function ConversationPage() {
 
   const isProcessingRef = useRef(false);
   const revealingRef = useRef(false);
+  const hasTrackedStartRef = useRef(false);
   const speakRef = useRef<((text: string, onEnd?: () => void) => Promise<void>) | null>(null);
   const sendMessageRef = useRef(sendMessage);
   sendMessageRef.current = sendMessage;
@@ -143,6 +145,10 @@ export default function ConversationPage() {
   const handleTranscript = useCallback(async (text: string) => {
     if (!text.trim() || isProcessingRef.current || revealingRef.current) return;
     isProcessingRef.current = true;
+    if (!hasTrackedStartRef.current) {
+      hasTrackedStartRef.current = true;
+      trackEvent("conversation_start");
+    }
     setOrbState("thinking");
     setCurrentText(""); // clear previous AI response when user starts speaking
 
@@ -164,9 +170,12 @@ export default function ConversationPage() {
     speakRef.current = voice.speak;
   }, [voice.speak]);
 
-  // Auto-show mic help modal whenever a voice error surfaces
+  // Auto-show mic help modal + track error whenever a voice error surfaces
   useEffect(() => {
-    if (voice.state.error) setShowMicHelp(true);
+    if (voice.state.error) {
+      setShowMicHelp(true);
+      trackEvent("mic_error", { errorType: voice.state.error });
+    }
   }, [voice.state.error]);
 
   // Cycle through labels while synthesizing
@@ -325,11 +334,10 @@ export default function ConversationPage() {
             <span>{language === "es" ? "Tienes una sesión anterior" : "You have an unfinished session"}</span>
             <button
               onClick={() => {
-                setShowResumeBanner(false);
                 try {
                   sessionStorage.setItem("ikigai_resume_session", JSON.stringify(localBackup));
                 } catch { /* ignore */ }
-                router.refresh();
+                window.location.reload();
               }}
               className="font-medium text-yellow-400 hover:text-yellow-300 transition-colors"
             >
@@ -647,15 +655,51 @@ export default function ConversationPage() {
           )}
         </AnimatePresence>
 
-        {voice.state.error && (
-          <motion.button
-            className="mt-3 text-xs text-red-400/70 max-w-[260px] text-center leading-relaxed underline underline-offset-2 touch-manipulation"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            onClick={() => setShowMicHelp(true)}
+        {/* Mic status pill — always visible when voice mode is active */}
+        {inputMode === "voice" && hasStarted && (
+          <button
+            onClick={() => voice.state.error && setShowMicHelp(true)}
+            className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation"
+            style={{
+              background: voice.state.error
+                ? "rgba(248,113,113,0.1)"
+                : voice.state.isListening && voice.state.audioLevel > 0.08
+                ? "rgba(34,197,94,0.1)"
+                : voice.state.isListening
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(255,255,255,0.03)",
+              border: `1px solid ${voice.state.error ? "rgba(248,113,113,0.3)" : voice.state.isListening && voice.state.audioLevel > 0.08 ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.08)"}`,
+              cursor: voice.state.error ? "pointer" : "default",
+              WebkitTapHighlightColor: "transparent",
+            }}
           >
-            {language === "es" ? "Problema con el micrófono. Toca para solucionar." : "Microphone issue. Tap to fix."}
-          </motion.button>
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{
+                background: voice.state.error
+                  ? "#f87171"
+                  : voice.state.isListening && voice.state.audioLevel > 0.08
+                  ? "#22c55e"
+                  : voice.state.isListening
+                  ? "#facc15"
+                  : "rgba(255,255,255,0.2)",
+                boxShadow: voice.state.isListening && !voice.state.error && voice.state.audioLevel > 0.08
+                  ? "0 0 6px #22c55e"
+                  : "none",
+              }}
+            />
+            <span className="text-[10px] tracking-wide" style={{
+              color: voice.state.error ? "#f87171" : voice.state.isListening ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.2)",
+            }}>
+              {voice.state.error
+                ? (language === "es" ? "Error de micrófono · toca para solucionar" : "Mic error · tap to fix")
+                : voice.state.isListening && voice.state.audioLevel > 0.08
+                ? (language === "es" ? "Escuchando" : "Hearing you")
+                : voice.state.isListening
+                ? (language === "es" ? "Escuchando..." : "Listening...")
+                : (language === "es" ? "Micrófono pausado" : "Mic paused")}
+            </span>
+          </button>
         )}
 
         {/* Reveal Ikigai button — always visible once conversation starts, dims below 20% */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { AiOrb } from "@/components/orb/AiOrb";
@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useResponsiveSize } from "@/lib/useResponsiveSize";
 import { createClient } from "@/lib/supabase/client";
+import { trackEvent } from "@/lib/track";
 
 
 const SYNTHESIS_KEY = "ikigai_synthesis_result";
@@ -52,6 +53,7 @@ function RevealContent() {
     if (!raw) { router.replace("/"); return; }
     try {
       setSynthesis(JSON.parse(raw));
+      trackEvent("reveal_view");
     } catch {
       router.replace("/");
     }

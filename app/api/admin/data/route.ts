@@ -143,6 +143,25 @@ export async function GET() {
     new Date(b.last_seen ?? 0).getTime() - new Date(a.last_seen ?? 0).getTime()
   );
 
+  // 5. Conversion funnel from analytics_events (best-effort — table may not exist yet)
+  let funnel = { page_view: 0, conversation_start: 0, reveal_view: 0, mic_error: 0 };
+  let recentEvents: Array<{ event: string; anon_id: string | null; metadata: Record<string, string> | null; created_at: string }> = [];
+  try {
+    const { data: eventRows } = await admin
+      .from("analytics_events")
+      .select("event, anon_id, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (eventRows) {
+      recentEvents = eventRows as typeof recentEvents;
+      for (const row of eventRows) {
+        const k = row.event as keyof typeof funnel;
+        if (k in funnel) funnel[k]++;
+      }
+    }
+  } catch { /* table not created yet — ignore */ }
+
   return NextResponse.json({
     users,
     anonymous_users,
@@ -150,5 +169,7 @@ export async function GET() {
     total_anonymous: anonymous_users.length,
     total_sessions: allSessions.length,
     sessions_with_data: allSessions.filter((s) => s.synthesis).length,
+    funnel,
+    recent_events: recentEvents.slice(0, 50),
   });
 }

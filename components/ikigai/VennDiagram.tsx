@@ -137,28 +137,28 @@ export function VennDiagram({ quadrantItems, vennDetails }: VennDiagramProps) {
           <circle cx={170} cy={310} r={115} fill="none" stroke="#9b6dff" strokeWidth={5} strokeOpacity={0.06} />
           <circle cx={310} cy={310} r={115} fill="none" stroke="#f5c842" strokeWidth={5} strokeOpacity={0.06} />
 
-          {/* Labels outside circles, items offset into exclusive outer crescent of each circle */}
-          {/* LOVE — label above, items in upper-left crescent (x=140 keeps text clear of SKILL/WORLD) */}
+          {/* Labels outside circles; items fill the exclusive crescent — max 2, centered, large font */}
+          {/* LOVE — upper-left crescent, zone center y≈112 */}
           <text x={170} y={46} textAnchor="middle" fontSize={12} fill="#e8845a" fillOpacity={0.9} fontWeight="700" letterSpacing="0.1em" fontFamily="system-ui,sans-serif">LOVE</text>
-          {toArr(quadrantItems.love).slice(0, 3).map((item, i) => (
-            <text key={i} x={140} y={86 + i * 22} textAnchor="middle" fontSize={15} fill="white" fillOpacity={0.75} fontFamily="system-ui,sans-serif">{trunc(item, 13)}</text>
+          {toArr(quadrantItems.love).slice(0, 2).map((item, i, arr) => (
+            <text key={i} x={140} y={112 - ((arr.length - 1) * 24) / 2 + i * 24} textAnchor="middle" fontSize={19} fill="white" fillOpacity={0.85} fontFamily="system-ui,sans-serif">{trunc(item, 10)}</text>
           ))}
 
-          {/* SKILL — label above, items in upper-right crescent (x=340) */}
+          {/* SKILL — upper-right crescent */}
           <text x={310} y={46} textAnchor="middle" fontSize={12} fill="#4ecdc4" fillOpacity={0.9} fontWeight="700" letterSpacing="0.1em" fontFamily="system-ui,sans-serif">SKILL</text>
-          {toArr(quadrantItems.skill).slice(0, 3).map((item, i) => (
-            <text key={i} x={340} y={86 + i * 22} textAnchor="middle" fontSize={15} fill="white" fillOpacity={0.75} fontFamily="system-ui,sans-serif">{trunc(item, 13)}</text>
+          {toArr(quadrantItems.skill).slice(0, 2).map((item, i, arr) => (
+            <text key={i} x={340} y={112 - ((arr.length - 1) * 24) / 2 + i * 24} textAnchor="middle" fontSize={19} fill="white" fillOpacity={0.85} fontFamily="system-ui,sans-serif">{trunc(item, 10)}</text>
           ))}
 
-          {/* WORLD — items in lower-left crescent, label below */}
-          {toArr(quadrantItems.world).slice(0, 3).map((item, i) => (
-            <text key={i} x={140} y={350 + i * 22} textAnchor="middle" fontSize={15} fill="white" fillOpacity={0.75} fontFamily="system-ui,sans-serif">{trunc(item, 13)}</text>
+          {/* WORLD — lower-left crescent, zone center y≈368 */}
+          {toArr(quadrantItems.world).slice(0, 2).map((item, i, arr) => (
+            <text key={i} x={140} y={368 - ((arr.length - 1) * 24) / 2 + i * 24} textAnchor="middle" fontSize={19} fill="white" fillOpacity={0.85} fontFamily="system-ui,sans-serif">{trunc(item, 10)}</text>
           ))}
           <text x={170} y={434} textAnchor="middle" fontSize={12} fill="#9b6dff" fillOpacity={0.9} fontWeight="700" letterSpacing="0.1em" fontFamily="system-ui,sans-serif">WORLD</text>
 
-          {/* VALUE — items in lower-right crescent, label below */}
-          {toArr(quadrantItems.paid).slice(0, 3).map((item, i) => (
-            <text key={i} x={340} y={350 + i * 22} textAnchor="middle" fontSize={15} fill="white" fillOpacity={0.75} fontFamily="system-ui,sans-serif">{trunc(item, 13)}</text>
+          {/* VALUE — lower-right crescent */}
+          {toArr(quadrantItems.paid).slice(0, 2).map((item, i, arr) => (
+            <text key={i} x={340} y={368 - ((arr.length - 1) * 24) / 2 + i * 24} textAnchor="middle" fontSize={19} fill="white" fillOpacity={0.85} fontFamily="system-ui,sans-serif">{trunc(item, 10)}</text>
           ))}
           <text x={310} y={434} textAnchor="middle" fontSize={12} fill="#f5c842" fillOpacity={0.9} fontWeight="700" letterSpacing="0.1em" fontFamily="system-ui,sans-serif">VALUE</text>
 

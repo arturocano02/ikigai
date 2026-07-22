@@ -5,8 +5,68 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
   Users, BarChart2, Zap, Globe, ChevronDown, ChevronRight,
-  X, Calendar, MessageSquare, TrendingUp, ArrowLeft,
+  X, Calendar, MessageSquare, TrendingUp, ArrowLeft, FlaskConical,
 } from "lucide-react";
+
+const TEST_PRESETS = [
+  {
+    id: "creative",
+    label: "Creative Pro",
+    insights: {
+      love: ["Photography", "Visual storytelling", "Street documentary"],
+      good: ["Adobe Suite", "Composition", "Making people comfortable"],
+      world: ["Stories change minds", "People feel unseen"],
+      paid: ["Freelance photography", "Brand design", "Content creation"],
+    },
+    messages: [
+      { role: "user" as const, content: "I'm 28, freelance photographer doing weddings mostly. It pays okay but feels hollow." },
+      { role: "assistant" as const, content: "What would not-hollow look like?" },
+      { role: "user" as const, content: "Documentary work. Photographing real life. I shoot immigrants in my city on weekends — people cry when they see it." },
+      { role: "assistant" as const, content: "That reaction — what does it feel like when someone cries at your photo?" },
+      { role: "user" as const, content: "Like I did something real. But I'm terrified it won't pay rent." },
+      { role: "assistant" as const, content: "What's your actual skill here beyond pressing a button?" },
+      { role: "user" as const, content: "Getting people to forget the camera. Showing their real face. I've done it with frightened people, kids, old men." },
+    ],
+  },
+  {
+    id: "burnout",
+    label: "Tech Burnout",
+    insights: {
+      love: ["Building from scratch", "Teaching juniors", "System design"],
+      good: ["Python", "Architecture", "Technical leadership"],
+      world: ["Devs need real mentors", "Software should serve humans"],
+      paid: ["Senior engineering", "Consulting", "Tech education"],
+    },
+    messages: [
+      { role: "user" as const, content: "35, senior engineer at a big tech company. Great salary, totally lost." },
+      { role: "assistant" as const, content: "Lost in what sense?" },
+      { role: "user" as const, content: "I build features that optimize ad clicks all day. Nothing I touch matters to anyone." },
+      { role: "assistant" as const, content: "When was the last time your work felt real?" },
+      { role: "user" as const, content: "Mentoring a junior last month. She shipped her first feature solo and thanked me. That meant more than any promo." },
+      { role: "assistant" as const, content: "Teaching vs building — which actually energises you?" },
+      { role: "user" as const, content: "Teaching, clearly. I've thought about a serious technical education platform but can't face leaving the salary." },
+    ],
+  },
+  {
+    id: "midlife",
+    label: "Life Pivot",
+    insights: {
+      love: ["Gardening", "Community building", "Slow living"],
+      good: ["Project management", "Facilitation", "Research"],
+      world: ["People are starved for rootedness", "Local food systems matter"],
+      paid: ["Workshops", "Consulting", "Writing"],
+    },
+    messages: [
+      { role: "user" as const, content: "45, 20 years in corporate HR. Finally have savings to take a year off and figure out what I actually want." },
+      { role: "assistant" as const, content: "What pushed you to finally take this year?" },
+      { role: "user" as const, content: "I realised I was helping companies keep people in jobs that were hollowing them out. And I was one of those people." },
+      { role: "assistant" as const, content: "So what do you actually care about?" },
+      { role: "user" as const, content: "Sustainable food. Community. My backyard garden changed my life — I started running workshops and people show up desperate to learn." },
+      { role: "assistant" as const, content: "Desperate how?" },
+      { role: "user" as const, content: "They want to feel connected to something real and tangible. I can give them that. I just don't know if it's a business." },
+    ],
+  },
+];
 
 type SessionSummary = {
   id: string;
@@ -59,6 +119,8 @@ type AdminData = {
   total_anonymous: number;
   total_sessions: number;
   sessions_with_data: number;
+  funnel: { page_view: number; conversation_start: number; reveal_view: number; mic_error: number };
+  recent_events: Array<{ event: string; anon_id: string | null; metadata: Record<string, string> | null; created_at: string }>;
 };
 
 function fmtDate(iso: string) {
@@ -508,6 +570,37 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"sessions" | "joined" | "score">("sessions");
+  const [testPreset, setTestPreset] = useState(TEST_PRESETS[0].id);
+  const [testLang, setTestLang] = useState<"en" | "es">("en");
+  const [testRunning, setTestRunning] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+
+  async function runTest() {
+    const preset = TEST_PRESETS.find((p) => p.id === testPreset)!;
+    setTestRunning(true);
+    setTestError(null);
+    try {
+      const res = await fetch("/api/synthesize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          insights: preset.insights,
+          messages: preset.messages,
+          language: testLang,
+          progress: { love: 1, good: 1, world: 1, paid: 1 },
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const synthesis = await res.json();
+      localStorage.setItem("ikigai_synthesis_result", JSON.stringify(synthesis));
+      sessionStorage.setItem("ikigai_session", "admin-test");
+      router.push("/reveal");
+    } catch (e) {
+      setTestError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setTestRunning(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -612,6 +705,106 @@ export default function AdminPage() {
                   <p className="text-2xl font-semibold" style={{ color }}>{value}</p>
                 </motion.div>
               ))}
+            </div>
+
+            {/* Conversion Funnel */}
+            {data.funnel && (
+              <div className="rounded-2xl p-5 space-y-4"
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-white/25" />
+                  <p className="text-[10px] tracking-[0.3em] uppercase text-white/25">Conversion Funnel</p>
+                  {data.funnel.mic_error > 0 && (
+                    <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.1)", color: "rgba(248,113,113,0.7)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                      {data.funnel.mic_error} mic errors
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-end gap-2">
+                  {[
+                    { label: "Landed", value: data.funnel.page_view, color: "#a855f7" },
+                    { label: "Started", value: data.funnel.conversation_start, color: "#06b6d4" },
+                    { label: "Revealed", value: data.funnel.reveal_view, color: "#f5c842" },
+                  ].map(({ label, value, color }, idx, arr) => {
+                    const prev = idx > 0 ? arr[idx - 1].value : null;
+                    const pct = prev && prev > 0 ? Math.round((value / prev) * 100) : null;
+                    return (
+                      <React.Fragment key={label}>
+                        <div className="flex flex-col items-center gap-1 flex-1">
+                          <p className="text-xl font-semibold" style={{ color }}>{value}</p>
+                          <div className="w-full rounded-full h-1.5" style={{ background: "rgba(255,255,255,0.06)" }}>
+                            <div className="h-full rounded-full" style={{
+                              width: arr[0].value > 0 ? `${Math.round((value / arr[0].value) * 100)}%` : "0%",
+                              background: color,
+                              opacity: 0.7,
+                            }} />
+                          </div>
+                          <p className="text-[10px] text-white/35 text-center">{label}</p>
+                        </div>
+                        {idx < arr.length - 1 && (
+                          <div className="pb-6 flex flex-col items-center gap-0.5 shrink-0">
+                            <ChevronRight className="w-3 h-3 text-white/15" />
+                            {pct !== null && <p className="text-[9px] text-white/25">{pct}%</p>}
+                          </div>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Test Run Panel */}
+            <div className="rounded-2xl p-5 space-y-4"
+              style={{ background: "rgba(212,160,23,0.04)", border: "1px solid rgba(212,160,23,0.18)" }}>
+              <div className="flex items-center gap-2">
+                <FlaskConical className="w-3.5 h-3.5" style={{ color: "rgba(212,160,23,0.7)" }} />
+                <p className="text-[10px] tracking-[0.3em] uppercase" style={{ color: "rgba(212,160,23,0.6)" }}>Test Synthesis</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {TEST_PRESETS.map((p) => (
+                  <button key={p.id} onClick={() => setTestPreset(p.id)}
+                    className="px-3 py-1.5 rounded-lg text-xs transition-all"
+                    style={{
+                      background: testPreset === p.id ? "rgba(212,160,23,0.15)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${testPreset === p.id ? "rgba(212,160,23,0.4)" : "rgba(255,255,255,0.08)"}`,
+                      color: testPreset === p.id ? "rgba(212,160,23,0.9)" : "rgba(255,255,255,0.4)",
+                    }}>
+                    {p.label}
+                  </button>
+                ))}
+                <div className="flex gap-1 ml-auto">
+                  {(["en", "es"] as const).map((l) => (
+                    <button key={l} onClick={() => setTestLang(l)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs transition-all"
+                      style={{
+                        background: testLang === l ? "rgba(255,255,255,0.08)" : "transparent",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: testLang === l ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)",
+                      }}>
+                      {l === "en" ? "🇬🇧 EN" : "🇪🇸 ES"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={runTest} disabled={testRunning}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(212,160,23,0.2), rgba(205,127,50,0.12))",
+                    border: "1px solid rgba(212,160,23,0.35)",
+                    color: "rgba(212,160,23,0.9)",
+                  }}>
+                  {testRunning ? (
+                    <motion.div className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent"
+                      animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} />
+                  ) : (
+                    <FlaskConical className="w-3.5 h-3.5" />
+                  )}
+                  {testRunning ? "Synthesising…" : "Run & view result"}
+                </button>
+                {testError && <p className="text-xs text-red-400/70">{testError}</p>}
+              </div>
             </div>
 
             {/* Language split */}

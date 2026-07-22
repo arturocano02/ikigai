@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { AiOrb } from "@/components/orb/AiOrb";
 import { useResponsiveSize } from "@/lib/useResponsiveSize";
+import { trackEvent } from "@/lib/track";
 
 export default function LandingPage() {
   const router = useRouter();
   const [hovering, setHovering] = useState(false);
   const [starting, setStarting] = useState(false);
   const orbSize = useResponsiveSize(148, 200);
+
+  useEffect(() => { trackEvent("page_view"); }, []);
 
   function handleBegin() {
     setStarting(true);
