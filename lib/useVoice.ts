@@ -35,95 +35,126 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
   const intentionalStopRef = useRef(false);
   // Prevents onend from restarting while AI is speaking (paused to avoid feedback)
   const pausedForSpeechRef = useRef(false);
+  // Language ref so the inner startRecognition closure always uses the latest value
+  const languageRef = useRef(language);
+  languageRef.current = language;
+
+  // Creates and starts a fresh SpeechRecognition instance. Called on first start
+  // and on every restart (onend or post-speech resume). Always a fresh object so
+  // iOS/Safari don't choke on reusing a stopped instance.
+  const startRecognitionRef = useRef<(() => void) | null>(null);
 
   const startListening = useCallback(async () => {
     intentionalStopRef.current = false;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
 
-      const ctx = new AudioContext();
-      audioContextRef.current = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyserRef.current = analyser;
+    // If stream already exists (e.g. called again after error), skip getUserMedia
+    if (!streamRef.current) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
 
-      const buf = new Uint8Array(analyser.frequencyBinCount);
-      function measureLevel() {
-        analyser.getByteFrequencyData(buf);
-        const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
-        setState((s) => ({ ...s, audioLevel: avg / 128 }));
-        levelRafRef.current = requestAnimationFrame(measureLevel);
+        const ctx = new AudioContext();
+        audioContextRef.current = ctx;
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const buf = new Uint8Array(analyser.frequencyBinCount);
+        function measureLevel() {
+          analyser.getByteFrequencyData(buf);
+          const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
+          setState((s) => ({ ...s, audioLevel: avg / 128 }));
+          levelRafRef.current = requestAnimationFrame(measureLevel);
+        }
+        measureLevel();
+      } catch {
+        setState((s) => ({
+          ...s,
+          error: "Microphone access denied. Please allow microphone access.",
+        }));
+        return;
       }
-      measureLevel();
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    const SR = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SR) { setState((s) => ({ ...s, isListening: true, error: null })); return; }
+
+    function startRecognition() {
+      if (intentionalStopRef.current || !streamRef.current) return;
+      // Stop and discard the previous instance before creating a new one
+      if (recognitionRef.current) {
+        try { recognitionRef.current.onend = null; recognitionRef.current.stop(); } catch { /* ignore */ }
+        recognitionRef.current = null;
+      }
+
+      const rec = new SR();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = languageRef.current === "es" ? "es-ES" : "en-US";
+      let finalTranscript = "";
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const win = window as any;
-      const SR = win.SpeechRecognition || win.webkitSpeechRecognition;
-      if (SR) {
-        const rec = new SR();
-        rec.continuous = true;
-        rec.interimResults = true;
-        rec.lang = language === "es" ? "es-ES" : "en-US";
-        let finalTranscript = "";
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rec.onresult = (e: any) => {
-          let interim = "";
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            if (e.results[i].isFinal) {
-              finalTranscript += e.results[i][0].transcript;
-            } else {
-              interim += e.results[i][0].transcript;
-            }
+      rec.onresult = (e: any) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            finalTranscript += e.results[i][0].transcript;
+          } else {
+            interim += e.results[i][0].transcript;
           }
-          pendingTranscriptRef.current = finalTranscript + interim;
-          setState((s) => ({ ...s, transcript: finalTranscript + interim }));
-        };
+        }
+        pendingTranscriptRef.current = finalTranscript + interim;
+        setState((s) => ({ ...s, transcript: finalTranscript + interim }));
+      };
 
-        rec.onspeechend = () => {
-          const toSend = pendingTranscriptRef.current.trim();
-          if (toSend) {
-            onTranscript(toSend);
-            finalTranscript = "";
-            pendingTranscriptRef.current = "";
-            setState((s) => ({ ...s, transcript: "" }));
-          }
-        };
+      rec.onspeechend = () => {
+        const toSend = pendingTranscriptRef.current.trim();
+        if (toSend) {
+          onTranscript(toSend);
+          finalTranscript = "";
+          pendingTranscriptRef.current = "";
+          setState((s) => ({ ...s, transcript: "" }));
+        }
+      };
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rec.onerror = (e: any) => {
-          // "no-speech" and "aborted" are both expected/normal — never surface them
-          if (e.error !== "no-speech" && e.error !== "aborted") {
-            setState((s) => ({ ...s, error: e.error }));
-          }
-        };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rec.onerror = (e: any) => {
+        // "no-speech" and "aborted" are normal — don't surface them
+        if (e.error !== "no-speech" && e.error !== "aborted") {
+          setState((s) => ({ ...s, error: e.error }));
+        }
+      };
 
-        // Restart recognition if it ends unexpectedly (browser timeout, tab blur, etc.)
-        rec.onend = () => {
-          if (!intentionalStopRef.current && !pausedForSpeechRef.current && streamRef.current) {
-            try { rec.start(); } catch { /* ignore — stream may have ended */ }
-          }
-        };
+      // On unexpected end, create a fresh instance and restart (100ms delay avoids
+      // race on browsers that fire onend synchronously before fully stopped)
+      rec.onend = () => {
+        if (!intentionalStopRef.current && !pausedForSpeechRef.current && streamRef.current) {
+          setTimeout(startRecognition, 100);
+        }
+      };
 
+      try {
         rec.start();
         recognitionRef.current = rec;
+      } catch {
+        // Start failed — retry after a short delay
+        setTimeout(startRecognition, 500);
       }
-
-      setState((s) => ({ ...s, isListening: true, error: null, transcript: "" }));
-    } catch {
-      setState((s) => ({
-        ...s,
-        error: "Microphone access denied. Please allow microphone access.",
-      }));
     }
-  }, [onTranscript, language]);
+
+    startRecognitionRef.current = startRecognition;
+    startRecognition();
+    setState((s) => ({ ...s, isListening: true, error: null, transcript: "" }));
+  }, [onTranscript]);
 
   const stopListening = useCallback(() => {
     cancelAnimationFrame(levelRafRef.current);
     intentionalStopRef.current = true;
+    startRecognitionRef.current = null;
 
     // Flush any pending speech before tearing down
     const pending = pendingTranscriptRef.current.trim();
@@ -162,15 +193,18 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
       // Pause recognition while AI speaks so its audio isn't captured as user input
       pausedForSpeechRef.current = true;
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch { /* ignore */ }
+        // Null onend first so the stopped instance doesn't trigger a restart
+        try { recognitionRef.current.onend = null; recognitionRef.current.stop(); } catch { /* ignore */ }
+        recognitionRef.current = null;
       }
 
       setState((s) => ({ ...s, isSpeaking: true, ttsMode: null }));
 
       const resumeRecognition = () => {
         pausedForSpeechRef.current = false;
-        if (recognitionRef.current && !intentionalStopRef.current && streamRef.current) {
-          try { recognitionRef.current.start(); } catch { /* already running */ }
+        // Use the same factory that handles iOS fresh-instance requirement
+        if (!intentionalStopRef.current && streamRef.current && startRecognitionRef.current) {
+          startRecognitionRef.current();
         }
       };
 
