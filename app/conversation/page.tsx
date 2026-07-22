@@ -712,7 +712,7 @@ export default function ConversationPage() {
               transition={{ delay: 1.5 }}
             >
               <motion.button
-                onClick={canReveal && !isProcessing ? handleCenterClick : undefined}
+                onClick={canReveal ? () => { voice.cancelSpeech(); handleCenterClick(); } : undefined}
                 className="relative flex items-center gap-3 px-7 py-3.5 rounded-full font-light text-sm tracking-wider touch-manipulation transition-all duration-700"
                 style={{
                   background: canReveal
@@ -725,13 +725,13 @@ export default function ConversationPage() {
                     ? `0 0 ${16 + glowT * 40}px rgba(212,160,23,${0.08 + glowT * 0.28})`
                     : "none",
                   color: canReveal ? `rgba(255,255,255,${0.5 + glowT * 0.45})` : "rgba(255,255,255,0.2)",
-                  cursor: canReveal && !isProcessing ? "pointer" : "default",
+                  cursor: canReveal ? "pointer" : "default",
                   minHeight: 48,
                   WebkitTapHighlightColor: "transparent",
                 }}
                 animate={mapIsReady ? { scale: [1, 1.025, 1] } : {}}
                 transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                whileTap={canReveal && !isProcessing ? { scale: 0.96 } : {}}
+                whileTap={canReveal ? { scale: 0.96 } : {}}
               >
                 <span>{language === "es" ? "Revelar mi Ikigai" : "Reveal Ikigai"}</span>
                 {confidenceScore > 0 && (
@@ -930,13 +930,26 @@ export default function ConversationPage() {
                 ))}
               </ol>
 
-              <button
-                onClick={() => { setShowMicHelp(false); switchToText(); }}
-                className="mt-1 w-full py-3 rounded-xl text-xs text-white/50 hover:text-white/70 transition-colors touch-manipulation"
-                style={{ border: "1px solid rgba(255,255,255,0.08)", WebkitTapHighlightColor: "transparent" }}
-              >
-                {language === "es" ? "Continuar escribiendo en su lugar" : "Continue by typing instead"}
-              </button>
+              <div className="flex flex-col gap-2 mt-1">
+                <button
+                  onClick={() => {
+                    setShowMicHelp(false);
+                    // startListening resets error state — if permission was just granted, this will work
+                    voice.startListening().catch(() => { setShowMicHelp(true); });
+                  }}
+                  className="w-full py-3 rounded-xl text-xs font-medium touch-manipulation transition-all"
+                  style={{ background: "rgba(212,160,23,0.15)", border: "1px solid rgba(212,160,23,0.3)", color: "#d4a017", WebkitTapHighlightColor: "transparent" }}
+                >
+                  {language === "es" ? "Intentar de nuevo" : "Try mic again"}
+                </button>
+                <button
+                  onClick={() => { setShowMicHelp(false); switchToText(); }}
+                  className="w-full py-3 rounded-xl text-xs text-white/50 hover:text-white/70 transition-colors touch-manipulation"
+                  style={{ border: "1px solid rgba(255,255,255,0.08)", WebkitTapHighlightColor: "transparent" }}
+                >
+                  {language === "es" ? "Continuar escribiendo en su lugar" : "Continue by typing instead"}
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

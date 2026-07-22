@@ -716,7 +716,7 @@ export default function AdminPage() {
                   <p className="text-[10px] tracking-[0.3em] uppercase text-white/25">Conversion Funnel</p>
                   {data.funnel.mic_error > 0 && (
                     <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.1)", color: "rgba(248,113,113,0.7)", border: "1px solid rgba(248,113,113,0.2)" }}>
-                      {data.funnel.mic_error} mic errors
+                      ⚠ {data.funnel.mic_error} mic errors
                     </span>
                   )}
                 </div>
@@ -751,6 +751,28 @@ export default function AdminPage() {
                     );
                   })}
                 </div>
+
+                {/* Mic error type breakdown */}
+                {data.recent_events && data.funnel.mic_error > 0 && (() => {
+                  const errs = data.recent_events
+                    .filter((e) => e.event === "mic_error")
+                    .reduce<Record<string, number>>((acc, e) => {
+                      const t = e.metadata?.errorType ?? "unknown";
+                      acc[t] = (acc[t] ?? 0) + 1;
+                      return acc;
+                    }, {});
+                  return Object.keys(errs).length > 0 ? (
+                    <div className="flex flex-wrap gap-2 pt-1 border-t" style={{ borderColor: "rgba(248,113,113,0.1)" }}>
+                      <span className="text-[10px] text-white/20 w-full mb-0.5">Error types (last 50 events):</span>
+                      {Object.entries(errs).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+                        <span key={type} className="text-[10px] px-2 py-0.5 rounded-full"
+                          style={{ background: "rgba(248,113,113,0.07)", color: "rgba(248,113,113,0.55)", border: "1px solid rgba(248,113,113,0.12)" }}>
+                          {type}: {count}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             )}
 
