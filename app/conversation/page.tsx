@@ -86,6 +86,8 @@ export default function ConversationPage() {
   const [showResumeBanner, setShowResumeBanner] = useState(false);
   const [hasPreviousResult, setHasPreviousResult] = useState(false);
   const [showMicHelp, setShowMicHelp] = useState(false);
+  const [showRevealNudge, setShowRevealNudge] = useState(false);
+  const revealNudgeFiredRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -239,6 +241,13 @@ export default function ConversationPage() {
   function beginWithCountdown() {
     if (audioUnlocked || countdown !== null) return;
     try { sessionStorage.setItem("ikigai_language", language); } catch { /* ignore */ }
+    // Unlock audio on iOS: must happen synchronously within the user gesture.
+    // Plays a zero-length silent utterance so subsequent speechSynthesis calls aren't blocked.
+    try {
+      const unlock = new SpeechSynthesisUtterance("");
+      unlock.volume = 0;
+      window.speechSynthesis?.speak(unlock);
+    } catch { /* ignore */ }
     setCountdown(3);
   }
 
@@ -303,8 +312,19 @@ export default function ConversationPage() {
   const allProgress = Object.values(ikigai.progress);
   const overallProgress = Math.round(allProgress.reduce((a, b) => a + b, 0) / allProgress.length);
   const hasAnyProgress = allProgress.some((p) => p > 0);
+
   const isProcessing = isProcessingRef.current || orbState === "thinking" || orbState === "speaking";
   const showOverlay = ikigai.phase === "synthesizing" || overlayLocked;
+
+  // Reveal nudge: fire once when overall progress crosses 50%
+  useEffect(() => {
+    if (overallProgress >= 50 && hasStarted && !revealNudgeFiredRef.current && !showOverlay) {
+      revealNudgeFiredRef.current = true;
+      setShowRevealNudge(true);
+      // Auto-dismiss after 8s
+      setTimeout(() => setShowRevealNudge(false), 8000);
+    }
+  }, [overallProgress, hasStarted, showOverlay]);
   const mapIsReady = ikigai.phase === "ready";
 
   // Confidence score drives the reveal button
@@ -763,6 +783,27 @@ export default function ConversationPage() {
                   </span>
                 )}
               </motion.button>
+              <AnimatePresence>
+                {showRevealNudge && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex items-start gap-2 max-w-[280px] px-4 py-3 rounded-xl"
+                    style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.2)" }}
+                  >
+                    <span className="text-[11px] leading-relaxed" style={{ color: "rgba(212,160,23,0.8)" }}>
+                      {language === "es"
+                        ? "Ya tienes suficiente para revelar tu Ikigai. Pulsa el botón para verlo ahora, o sigue hablando para un análisis más profundo."
+                        : "You have enough for a full result. Tap to reveal your Ikigai now, or keep going for a deeper analysis."}
+                    </span>
+                    <button onClick={() => setShowRevealNudge(false)} className="shrink-0 mt-0.5 text-white/20 hover:text-white/40" style={{ WebkitTapHighlightColor: "transparent" }}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <p className="text-[10px] text-white/20 tracking-wider">
                 {language === "es"
                   ? (!canReveal ? "Sigue compartiendo para ganar confianza" : mapIsReady ? "Tu mapa está completo" : "Continúa o revela ahora")

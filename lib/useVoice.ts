@@ -210,6 +210,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
 
       let resolved = false;
       let loadTimeoutId: ReturnType<typeof setTimeout> | null = null;
+      let nuclearTimeoutId: ReturnType<typeof setTimeout> | null = null;
       // AbortController lets us cancel a slow ElevenLabs fetch before it plays into an open mic
       const abortCtrl = new AbortController();
 
@@ -217,13 +218,22 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         if (resolved) return;
         resolved = true;
         if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
+        if (nuclearTimeoutId) { clearTimeout(nuclearTimeoutId); nuclearTimeoutId = null; }
         setState((s) => ({ ...s, isSpeaking: false, ttsMode: null }));
         resumeRecognition();
         onEnd?.();
         resolve();
       };
 
-      // Give ElevenLabs 10s before giving up — Vercel cold start + ElevenLabs can be slow
+      // Nuclear safety: if nothing calls finish() within 20s, force it so mic always resumes
+      nuclearTimeoutId = setTimeout(() => {
+        if (!resolved) {
+          console.warn("[voice] Nuclear timeout — forcing speech end so mic can resume");
+          finish();
+        }
+      }, 20000);
+
+      // Give ElevenLabs 5s before giving up (cold starts are usually <3s)
       loadTimeoutId = setTimeout(() => {
         if (resolved) return;
         console.warn("[voice] ElevenLabs timeout — falling back to browser TTS");
@@ -236,7 +246,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         // Run fallback TTS so the user still hears the response
         setState((s) => ({ ...s, ttsMode: "browser" }));
         fallbackTTS(text, finish, language);
-      }, 10000);
+      }, 5000);
 
       // Try ElevenLabs first
       try {
@@ -264,9 +274,15 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
             console.error("[voice] ElevenLabs audio playback error, falling back to browser TTS");
             if (!resolved) { setState((s) => ({ ...s, ttsMode: "browser" })); fallbackTTS(text, finish, language); }
           };
-          await audio.play();
-          // Audio is playing — clear the load timeout so it plays to completion
-          if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
+          try {
+            await audio.play();
+            // Audio is playing — clear the ElevenLabs timeout so it plays to completion
+            if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
+          } catch {
+            // Autoplay blocked (common on iOS) — fall through to browser TTS below
+            URL.revokeObjectURL(url);
+            currentAudioRef.current = null;
+          }
           return;
         } else {
           const body = await res.text().catch(() => "");
@@ -306,8 +322,18 @@ function fallbackTTS(text: string, onEnd: () => void, language: "en" | "es" = "e
       ? voices.find((v) => v.lang.startsWith("es") && v.localService) ?? voices.find((v) => v.lang.startsWith("es"))
       : voices.find((v) => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang.startsWith("en") && v.localService));
     if (preferred) utt.voice = preferred;
-    utt.onend = () => setTimeout(onEnd, 350);
-    utt.onerror = onEnd;
+
+    // Safety timeout: iOS sometimes silently blocks speechSynthesis without firing onend/onerror.
+    // After 12s, force onEnd so the mic always resumes.
+    const safetyId = setTimeout(() => {
+      utt.onend = null;
+      utt.onerror = null;
+      window.speechSynthesis?.cancel();
+      onEnd();
+    }, 12000);
+
+    utt.onend = () => { clearTimeout(safetyId); setTimeout(onEnd, 350); };
+    utt.onerror = () => { clearTimeout(safetyId); onEnd(); };
     window.speechSynthesis.speak(utt);
   }
 

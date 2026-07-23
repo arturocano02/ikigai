@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, MessageSquare, ChevronRight } from "lucide-react";
 
 const DIMS = [
   { label: "Love", color: "#f43f5e", desc: "What excites you" },
@@ -24,7 +24,7 @@ const STEPS = [
   },
   {
     num: "3",
-    title: "Tap “I don’t know”",
+    title: "Tap \"I don't know\"",
     body: "If you're stuck, the AI explores from a different angle until something clicks.",
   },
   {
@@ -34,13 +34,61 @@ const STEPS = [
   },
 ];
 
+const FEEDBACK_TYPES = [
+  { id: "bug", label: "Bug / Glitch", emoji: "🐛" },
+  { id: "voice", label: "Voice issue", emoji: "🎤" },
+  { id: "feature", label: "Feature idea", emoji: "💡" },
+  { id: "general", label: "General feedback", emoji: "💬" },
+];
+
+function getAnonId(): string {
+  try {
+    return localStorage.getItem("ikigai_anon_id") ?? "unknown";
+  } catch { return "unknown"; }
+}
+
 export default function InfoButton() {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"info" | "feedback" | "thanks">("info");
+  const [feedbackType, setFeedbackType] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  function openInfo() { setView("info"); setOpen(true); }
+
+  function openFeedback() { setView("feedback"); setFeedbackType(null); setDescription(""); setOpen(true); }
+
+  function close() {
+    setOpen(false);
+    setTimeout(() => { setView("info"); setFeedbackType(null); setDescription(""); }, 300);
+  }
+
+  async function submitFeedback() {
+    if (!feedbackType || !description.trim()) return;
+    setSubmitting(true);
+    try {
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: feedbackType,
+          description: description.trim(),
+          anonId: getAnonId(),
+          page: typeof window !== "undefined" ? window.location.pathname : "unknown",
+        }),
+      });
+      setView("thanks");
+      setTimeout(close, 2500);
+    } catch { /* ignore */ } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <>
+      {/* Info button */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={openInfo}
         className="flex items-center justify-center rounded-full text-white/35 hover:text-white/65 transition-colors touch-manipulation"
         style={{
           width: 32,
@@ -65,7 +113,7 @@ export default function InfoButton() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setOpen(false)}
+            onClick={close}
           >
             <div
               className="absolute inset-0"
@@ -85,91 +133,192 @@ export default function InfoButton() {
               transition={{ duration: 0.3, ease: [0.34, 1.2, 0.64, 1] }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
-              <div className="px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="absolute top-4 right-4 text-white/25 hover:text-white/55 transition-colors touch-manipulation"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <p className="text-[10px] text-white/30 tracking-[0.2em] uppercase mb-1">What is</p>
-                <h2 className="text-white/90 font-light text-xl tracking-wide">Ikigai</h2>
-                <p className="text-xs text-white/40 font-light mt-0.5">Japanese concept, <em>reason for being</em></p>
-              </div>
+              <button
+                onClick={close}
+                className="absolute top-4 right-4 text-white/25 hover:text-white/55 transition-colors touch-manipulation z-10"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-              {/* 4 circles */}
-              <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <p className="text-[10px] text-white/25 tracking-widest uppercase mb-3">The four areas</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {DIMS.map((d) => (
-                    <div key={d.label} className="flex flex-col items-center gap-1.5">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ background: `${d.color}18`, border: `1px solid ${d.color}40` }}
-                      >
-                        <div className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                      </div>
-                      <span className="text-[10px] font-medium text-white/70 tracking-wide">{d.label}</span>
-                      <span className="text-[9px] text-white/30 text-center leading-tight">{d.desc}</span>
+              {/* INFO VIEW */}
+              {view === "info" && (
+                <>
+                  {/* Give Feedback button at top */}
+                  <div className="px-5 pt-5 pb-3">
+                    <button
+                      onClick={() => setView("feedback")}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all touch-manipulation"
+                      style={{
+                        background: "rgba(212,160,23,0.07)",
+                        border: "1px solid rgba(212,160,23,0.2)",
+                        color: "rgba(212,160,23,0.75)",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Give feedback
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 opacity-50" />
+                    </button>
+                  </div>
+
+                  {/* Header */}
+                  <div className="px-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <p className="text-[10px] text-white/30 tracking-[0.2em] uppercase mb-1">What is</p>
+                    <h2 className="text-white/90 font-light text-xl tracking-wide">Ikigai</h2>
+                    <p className="text-xs text-white/40 font-light mt-0.5">Japanese concept, <em>reason for being</em></p>
+                  </div>
+
+                  {/* 4 circles */}
+                  <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <p className="text-[10px] text-white/25 tracking-widest uppercase mb-3">The four areas</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {DIMS.map((d) => (
+                        <div key={d.label} className="flex flex-col items-center gap-1.5">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center"
+                            style={{ background: `${d.color}18`, border: `1px solid ${d.color}40` }}
+                          >
+                            <div className="w-2 h-2 rounded-full" style={{ background: d.color }} />
+                          </div>
+                          <span className="text-[10px] font-medium text-white/70 tracking-wide">{d.label}</span>
+                          <span className="text-[9px] text-white/30 text-center leading-tight">{d.desc}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="mt-3 text-center">
-                  <span className="text-[10px] text-white/25">Where all four overlap → </span>
-                  <span
-                    className="text-[10px] font-medium"
-                    style={{ background: "linear-gradient(90deg,#fb923c,#14b8a6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
-                  >
-                    your purpose
-                  </span>
-                </div>
-              </div>
+                    <div className="mt-3 text-center">
+                      <span className="text-[10px] text-white/25">Where all four overlap → </span>
+                      <span
+                        className="text-[10px] font-medium"
+                        style={{ background: "linear-gradient(90deg,#fb923c,#14b8a6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+                      >
+                        your purpose
+                      </span>
+                    </div>
+                  </div>
 
-              {/* Steps */}
-              <div className="px-5 py-4">
-                <p className="text-[10px] text-white/25 tracking-widest uppercase mb-3">How it works</p>
-                <div className="space-y-3">
-                  {STEPS.map((s, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <div
-                        className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] font-medium mt-0.5"
+                  {/* Steps */}
+                  <div className="px-5 py-4">
+                    <p className="text-[10px] text-white/25 tracking-widest uppercase mb-3">How it works</p>
+                    <div className="space-y-3">
+                      {STEPS.map((s, i) => (
+                        <div key={i} className="flex gap-3 items-start">
+                          <div
+                            className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] font-medium mt-0.5"
+                            style={{
+                              background: "rgba(249,115,22,0.12)",
+                              border: "1px solid rgba(249,115,22,0.3)",
+                              color: "rgba(249,115,22,0.8)",
+                            }}
+                          >
+                            {s.num}
+                          </div>
+                          <div>
+                            <p className="text-xs text-white/75 font-medium leading-tight">{s.title}</p>
+                            <p className="text-[11px] text-white/35 font-light leading-relaxed mt-0.5">{s.body}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-5">
+                    <button
+                      onClick={close}
+                      className="w-full py-3 rounded-xl text-sm text-white/70 font-light tracking-wide transition-all touch-manipulation"
+                      style={{
+                        border: "1px solid rgba(249,115,22,0.35)",
+                        background: "rgba(249,115,22,0.1)",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      Got it
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* FEEDBACK VIEW */}
+              {view === "feedback" && (
+                <div className="px-5 py-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setView("info")}
+                      className="text-white/30 hover:text-white/60 transition-colors touch-manipulation"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+                    <h2 className="text-sm font-medium text-white/80">Give feedback</h2>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {FEEDBACK_TYPES.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setFeedbackType(t.id)}
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs text-left transition-all touch-manipulation"
                         style={{
-                          background: "rgba(249,115,22,0.12)",
-                          border: "1px solid rgba(249,115,22,0.3)",
-                          color: "rgba(249,115,22,0.8)",
+                          background: feedbackType === t.id ? "rgba(212,160,23,0.12)" : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${feedbackType === t.id ? "rgba(212,160,23,0.35)" : "rgba(255,255,255,0.08)"}`,
+                          color: feedbackType === t.id ? "rgba(212,160,23,0.9)" : "rgba(255,255,255,0.45)",
+                          WebkitTapHighlightColor: "transparent",
                         }}
                       >
-                        {s.num}
-                      </div>
-                      <div>
-                        <p className="text-xs text-white/75 font-medium leading-tight">{s.title}</p>
-                        <p className="text-[11px] text-white/35 font-light leading-relaxed mt-0.5">{s.body}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                        <span>{t.emoji}</span>
+                        <span>{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
 
-              {/* Footer CTA */}
-              <div className="px-5 pb-5">
-                <button
-                  onClick={() => setOpen(false)}
-                  className="w-full py-3 rounded-xl text-sm text-white/70 font-light tracking-wide transition-all touch-manipulation"
-                  style={{
-                    border: "1px solid rgba(249,115,22,0.35)",
-                    background: "rgba(249,115,22,0.1)",
-                    WebkitTapHighlightColor: "transparent",
-                  }}
-                >
-                  Got it
-                </button>
-              </div>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Tell us what happened or what you'd like to see..."
+                    rows={4}
+                    className="w-full resize-none rounded-xl px-3.5 py-3 text-xs leading-relaxed outline-none transition-all"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.75)",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = "rgba(212,160,23,0.3)"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; }}
+                  />
+
+                  <button
+                    onClick={submitFeedback}
+                    disabled={!feedbackType || !description.trim() || submitting}
+                    className="w-full py-3 rounded-xl text-sm font-medium transition-all touch-manipulation"
+                    style={{
+                      background: feedbackType && description.trim() ? "rgba(212,160,23,0.15)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${feedbackType && description.trim() ? "rgba(212,160,23,0.4)" : "rgba(255,255,255,0.06)"}`,
+                      color: feedbackType && description.trim() ? "rgba(212,160,23,0.9)" : "rgba(255,255,255,0.2)",
+                      cursor: feedbackType && description.trim() ? "pointer" : "default",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    {submitting ? "Sending..." : "Send feedback"}
+                  </button>
+                </div>
+              )}
+
+              {/* THANKS VIEW */}
+              {view === "thanks" && (
+                <div className="px-5 py-10 flex flex-col items-center gap-3">
+                  <div className="text-2xl">✓</div>
+                  <p className="text-sm text-white/70 font-light">Thanks for the feedback</p>
+                  <p className="text-[11px] text-white/30 text-center">We read every submission.</p>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
     </>
   );
 }
