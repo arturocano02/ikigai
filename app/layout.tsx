@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import AuthButton from "@/components/auth/AuthButton";
 import GdprBanner from "@/components/auth/GdprBanner";
 import InfoButton from "@/components/InfoButton";
@@ -41,6 +42,7 @@ export default function RootLayout({
         {children}
 
         <GdprBanner />
+        <Analytics />
       </body>
     </html>
   );
