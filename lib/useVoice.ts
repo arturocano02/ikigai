@@ -285,8 +285,9 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           }
           return;
         } else {
-          const body = await res.text().catch(() => "");
-          console.error(`[voice] ElevenLabs ${res.status} — falling back to browser TTS:`, body);
+          const detail = await res.json().catch(() => ({})) as Record<string, unknown>;
+          console.error(`[voice] ElevenLabs ${res.status} — falling back to browser TTS. Detail:`, detail);
+          console.error(`[voice] Fix: go to elevenlabs.io → get new API key → Vercel → Settings → Env Vars → update ELEVENLABS_API_KEY`);
         }
       } catch (err) {
         if ((err as Error).name === "AbortError") return; // intentional abort — timeout handler took over

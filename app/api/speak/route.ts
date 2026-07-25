@@ -9,11 +9,13 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) {
+    console.error("[speak] ELEVENLABS_API_KEY is not set");
     return NextResponse.json({ error: "No ElevenLabs key" }, { status: 503 });
   }
 
   const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || "hpp4J3VqNfWAUOO0d1Us";
-  console.log(`[speak] using voiceId=${voiceId} (from env: ${!!process.env.ELEVENLABS_VOICE_ID})`);
+  const keyPreview = `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`;
+  console.log(`[speak] voiceId=${voiceId} key=${keyPreview} lang=${language}`);
 
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -40,8 +42,8 @@ export async function POST(req: NextRequest) {
 
   if (!res.ok) {
     const body = await res.text();
-    console.error(`ElevenLabs ${res.status}:`, body);
-    return NextResponse.json({ error: `ElevenLabs error ${res.status}` }, { status: 502 });
+    console.error(`[speak] ElevenLabs ${res.status} voiceId=${voiceId} key=${keyPreview}: ${body}`);
+    return NextResponse.json({ error: `ElevenLabs error ${res.status}`, detail: body }, { status: 502 });
   }
 
   const audioBuffer = await res.arrayBuffer();
