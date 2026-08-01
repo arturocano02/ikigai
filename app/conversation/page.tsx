@@ -902,32 +902,11 @@ export default function ConversationPage() {
       {/* Synthesizing overlay — stays locked until navigation completes */}
       <AnimatePresence>
         {showOverlay && (
-          <motion.div
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center px-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={{ background: "rgba(5,5,8,0.97)", backdropFilter: "blur(24px)" }}
-          >
-            <motion.div
-              animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <AiOrb state="thinking" size={isMobile ? 120 : 160} />
-            </motion.div>
-
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={synthesisStageIdx}
-                className="mt-10 text-white/55 font-light tracking-wide text-sm text-center"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.7 }}
-              >
-                {SYNTHESIS_STAGES[language][synthesisStageIdx]}
-              </motion.p>
-            </AnimatePresence>
-          </motion.div>
+          <SynthesisOverlay
+            language={language}
+            isMobile={isMobile}
+            synthesisStageIdx={synthesisStageIdx}
+          />
         )}
       </AnimatePresence>
 
@@ -1016,6 +995,125 @@ export default function ConversationPage() {
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+function SynthesisOverlay({
+  language,
+  isMobile,
+  synthesisStageIdx,
+}: {
+  language: "en" | "es";
+  isMobile: boolean;
+  synthesisStageIdx: number;
+}) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const elapsedLabel = mins > 0
+    ? `${mins}m ${secs}s`
+    : `${secs}s`;
+
+  const stages = SYNTHESIS_STAGES[language];
+
+  return (
+    <motion.div
+      className="absolute inset-0 z-50 flex flex-col items-center justify-center px-6 gap-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ background: "rgba(5,5,8,0.97)", backdropFilter: "blur(24px)" }}
+    >
+      <motion.div
+        animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <AiOrb state="thinking" size={isMobile ? 120 : 160} />
+      </motion.div>
+
+      {/* Cycling stage label */}
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={synthesisStageIdx}
+          className="mt-8 text-white/55 font-light tracking-wide text-sm text-center"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.7 }}
+        >
+          {stages[synthesisStageIdx]}
+        </motion.p>
+      </AnimatePresence>
+
+      {/* Elapsed timer */}
+      <p className="mt-2 text-[11px] tabular-nums" style={{ color: "rgba(255,255,255,0.18)" }}>
+        {elapsedLabel}
+      </p>
+
+      {/* Don't-refresh warning — appears after 4s so it doesn't startle immediately */}
+      <AnimatePresence>
+        {elapsed >= 4 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mt-8 max-w-xs w-full rounded-2xl px-5 py-4 flex flex-col gap-2 text-center"
+            style={{
+              background: "rgba(212,160,23,0.07)",
+              border: "1px solid rgba(212,160,23,0.2)",
+            }}
+          >
+            <p className="text-xs font-medium" style={{ color: "rgba(212,160,23,0.9)" }}>
+              {language === "es" ? "⚠️ No cierres esta pantalla" : "⚠️ Don't close or refresh this page"}
+            </p>
+            <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+              {language === "es"
+                ? "Tu análisis se está generando. Si refrescas la página, perderás tu conversación."
+                : "Your analysis is being generated. If you refresh or navigate away, your conversation will be lost."}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* This can take a while note — appears after 15s */}
+      <AnimatePresence>
+        {elapsed >= 15 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="mt-4 text-[11px] text-center leading-relaxed max-w-[240px]"
+            style={{ color: "rgba(255,255,255,0.28)" }}
+          >
+            {language === "es"
+              ? "Esto puede tardar hasta 2 minutos. Tu análisis está en camino."
+              : "This can take up to 2 minutes. Your analysis is on its way."}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      {/* Reassurance for very long waits — appears after 60s */}
+      <AnimatePresence>
+        {elapsed >= 60 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="mt-3 text-[11px] text-center"
+            style={{ color: "rgba(212,160,23,0.5)" }}
+          >
+            {language === "es"
+              ? "Sigue aquí — tu resultado está casi listo."
+              : "Still here — your result is almost ready."}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
