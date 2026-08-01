@@ -235,6 +235,22 @@ export function useIkigai(
     synthesize(progressRef.current, insightsRef.current, messagesRef.current);
   }, [synthesize]);
 
+  // Load a saved session after mount (used to avoid SSR/client hydration mismatch)
+  const loadSession = useCallback((session: SavedSession) => {
+    messagesRef.current = session.messages;
+    progressRef.current = session.progress;
+    insightsRef.current = session.insights;
+    focusRef.current = session.currentFocus;
+    setState((s) => ({
+      ...s,
+      messages: session.messages,
+      progress: session.progress,
+      insights: session.insights,
+      currentFocus: session.currentFocus,
+      phase: "conversation",
+    }));
+  }, []);
+
   const reset = useCallback(() => {
     abortRef.current?.abort();
     messagesRef.current = [];
@@ -255,5 +271,5 @@ export function useIkigai(
     });
   }, []);
 
-  return { state, sendMessage, triggerSynthesis, reset };
+  return { state, sendMessage, triggerSynthesis, reset, loadSession };
 }

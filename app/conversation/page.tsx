@@ -70,18 +70,9 @@ const DIM_LABELS = {
 export default function ConversationPage() {
   const router = useRouter();
 
-  const [resumeSession] = useState<SavedSession | undefined>(() => {
-    if (typeof window === "undefined") return undefined;
-    try {
-      const raw = sessionStorage.getItem("ikigai_resume_session");
-      if (!raw) return undefined;
-      sessionStorage.removeItem("ikigai_resume_session");
-      return JSON.parse(raw) as SavedSession;
-    } catch {
-      return undefined;
-    }
-  });
-
+  // Always start false/null — reading storage in useState initializer causes React #418
+  // hydration mismatch (server has no sessionStorage, client does).
+  const [isResume, setIsResume] = useState(false);
   const [localBackup, setLocalBackup] = useState<SavedSession | null>(null);
   const [showResumeBanner, setShowResumeBanner] = useState(false);
   const [hasPreviousResult, setHasPreviousResult] = useState(false);
@@ -89,36 +80,13 @@ export default function ConversationPage() {
   const [showRevealNudge, setShowRevealNudge] = useState(false);
   const revealNudgeFiredRef = useRef(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("ikigai_conv_backup");
-      if (raw) {
-        const parsed = JSON.parse(raw) as SavedSession;
-        if (parsed.messages?.length > 3) {
-          setLocalBackup(parsed);
-          setShowResumeBanner(true);
-        }
-      }
-    } catch { /* ignore */ }
-    try {
-      const hasResult = !!(
-        sessionStorage.getItem("ikigai_synthesis_result") ||
-        localStorage.getItem("ikigai_synthesis_result")
-      );
-      setHasPreviousResult(hasResult);
-    } catch { /* ignore */ }
-  }, []);
-
-  const isResume = !!resumeSession;
-
   const [convLength, setConvLength] = useState<ConvLength>("short");
   const [language, setLanguage] = useState<"en" | "es">("en");
-  const { state: ikigai, sendMessage, triggerSynthesis, reset } = useIkigai(convLength, resumeSession, language);
+  const { state: ikigai, sendMessage, triggerSynthesis, reset, loadSession } = useIkigai(convLength, undefined, language);
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [currentText, setCurrentText] = useState("");
   const [hasStarted, setHasStarted] = useState(false);
-  const [showMap, setShowMap] = useState(isResume);
+  const [showMap, setShowMap] = useState(false); // always false on first render to avoid hydration mismatch
   const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
   const [typedMessage, setTypedMessage] = useState("");
   const [audioUnlocked, setAudioUnlocked] = useState(false);
@@ -171,6 +139,43 @@ export default function ConversationPage() {
   useEffect(() => {
     speakRef.current = voice.speak;
   }, [voice.speak]);
+
+  // Read all client-only storage after hydration — never in useState initializers
+  // (that caused React #418 hydration mismatch: server has no sessionStorage/localStorage)
+  useEffect(() => {
+    // 1. Resume session passed via sessionStorage from the home page "Continue" button
+    try {
+      const raw = sessionStorage.getItem("ikigai_resume_session");
+      if (raw) {
+        sessionStorage.removeItem("ikigai_resume_session");
+        const parsed = JSON.parse(raw) as SavedSession;
+        loadSession(parsed);
+        setIsResume(true);
+        setShowMap(true);
+      }
+    } catch { /* ignore */ }
+
+    // 2. localStorage backup from an interrupted (not resume-button) session
+    try {
+      const raw = localStorage.getItem("ikigai_conv_backup");
+      if (raw) {
+        const parsed = JSON.parse(raw) as SavedSession;
+        if (parsed.messages?.length > 3) {
+          setLocalBackup(parsed);
+          setShowResumeBanner(true);
+        }
+      }
+    } catch { /* ignore */ }
+
+    // 3. Whether a previous synthesis result exists
+    try {
+      const hasResult = !!(
+        sessionStorage.getItem("ikigai_synthesis_result") ||
+        localStorage.getItem("ikigai_synthesis_result")
+      );
+      setHasPreviousResult(hasResult);
+    } catch { /* ignore */ }
+  }, [loadSession]);
 
   // Auto-show mic help modal + track error whenever a voice error surfaces
   useEffect(() => {
