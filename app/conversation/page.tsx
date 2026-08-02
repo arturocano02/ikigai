@@ -111,7 +111,7 @@ export default function ConversationPage() {
   const speakRef = useRef<((text: string, onEnd?: () => void) => Promise<void>) | null>(null);
   const sendMessageRef = useRef(sendMessage);
   sendMessageRef.current = sendMessage;
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const unlockRef = useRef<() => void>(() => {});
 
   const explorationModeRef = useRef(false);
@@ -264,12 +264,21 @@ export default function ConversationPage() {
   function beginWithCountdown() {
     if (audioUnlocked || countdown !== null) return;
     try { sessionStorage.setItem("ikigai_language", language); } catch { /* ignore */ }
-    // Unlock audio on iOS: must happen synchronously within the user gesture.
-    // Plays a zero-length silent utterance so subsequent speechSynthesis calls aren't blocked.
+    // Unlock audio on iOS: both unlocks must happen synchronously within the user gesture.
+    // 1. speechSynthesis unlock — for browser TTS fallback
     try {
       const unlock = new SpeechSynthesisUtterance("");
       unlock.volume = 0;
       window.speechSynthesis?.speak(unlock);
+    } catch { /* ignore */ }
+    // 2. HTMLAudioElement unlock — for ElevenLabs. Without this, iOS blocks audio.play()
+    //    on elements created later (outside a user gesture), causing permanent TTS fallback.
+    try {
+      // Minimal silent MP3 (44 bytes) played at zero volume to satisfy iOS autoplay policy
+      const silentMp3 = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjQxLjEwMAAAAAAAAAAAAAAA";
+      const a = new Audio(silentMp3);
+      a.volume = 0;
+      a.play().catch(() => {});
     } catch { /* ignore */ }
     setCountdown(3);
   }
@@ -682,14 +691,19 @@ export default function ConversationPage() {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 w-full">
-                  <input ref={inputRef} type="text" value={typedMessage}
-                    onChange={(e) => setTypedMessage(e.target.value)}
+                <div className="flex items-end gap-2 w-full">
+                  <textarea ref={inputRef} rows={1} value={typedMessage}
+                    onChange={(e) => {
+                      setTypedMessage(e.target.value);
+                      // auto-resize: reset then grow to scrollHeight
+                      e.target.style.height = "auto";
+                      e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder={language === "es" ? "Escribe tu respuesta..." : "Type your answer..."}
                     disabled={isProcessing}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all disabled:opacity-40"
-                    style={{ minHeight: 44, borderColor: "rgba(255,255,255,0.1)" }}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all disabled:opacity-40"
+                    style={{ minHeight: 44, maxHeight: 160, resize: "none", overflowY: "auto", borderColor: "rgba(255,255,255,0.1)", lineHeight: "1.4" }}
                     autoComplete="off" autoCorrect="off" spellCheck={false}
                     onFocus={(e) => { e.target.style.borderColor = "rgba(212,160,23,0.5)"; }}
                     onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; }}
