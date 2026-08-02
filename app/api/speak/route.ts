@@ -9,13 +9,13 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) {
-    console.error("[speak] ELEVENLABS_API_KEY is not set");
-    return NextResponse.json({ error: "No ElevenLabs key" }, { status: 503 });
+    console.error("[speak] ELEVENLABS_API_KEY is not set in Vercel env vars");
+    return NextResponse.json({ error: "No ElevenLabs key", code: "no_key" }, { status: 503 });
   }
 
   const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || "hpp4J3VqNfWAUOO0d1Us";
   const keyPreview = `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`;
-  console.log(`[speak] voiceId=${voiceId} key=${keyPreview} lang=${language}`);
+  console.log(`[speak] voiceId=${voiceId} key=${keyPreview} lang=${language} chars=${text.length}`);
 
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
           similarity_boost: 0.75,
           style: 0.1,
           use_speaker_boost: true,
-          speed: 1.2, // max allowed by ElevenLabs
+          speed: 1.2,
         },
       }),
     }
@@ -43,10 +43,24 @@ export async function POST(req: NextRequest) {
   if (!res.ok) {
     const body = await res.text();
     console.error(`[speak] ElevenLabs ${res.status} voiceId=${voiceId} key=${keyPreview}: ${body}`);
-    return NextResponse.json({ error: `ElevenLabs error ${res.status}`, detail: body }, { status: 502 });
+
+    // Detect quota exhaustion so client can show a specific message
+    const isQuota = res.status === 429 ||
+      body.includes("quota_exceeded") ||
+      body.includes("quota exceeded") ||
+      body.includes("character_limit") ||
+      body.includes("free plan") ||
+      // ElevenLabs sometimes returns 401 when free-tier quota is maxed
+      (res.status === 401 && body.includes("quota"));
+
+    return NextResponse.json(
+      { error: `ElevenLabs error ${res.status}`, detail: body, code: isQuota ? "quota_exceeded" : "elevenlabs_error" },
+      { status: 502 }
+    );
   }
 
   const audioBuffer = await res.arrayBuffer();
+  console.log(`[speak] OK — ${audioBuffer.byteLength} bytes`);
 
   return new NextResponse(audioBuffer, {
     status: 200,

@@ -10,6 +10,8 @@ export interface VoiceState {
   error: string | null;
   /** Which TTS engine is currently being used. null = not speaking yet. */
   ttsMode: "elevenlabs" | "browser" | null;
+  /** True when ElevenLabs returned quota_exceeded so UI can show a specific message. */
+  quotaExceeded: boolean;
 }
 
 export function useVoice(onTranscript: (text: string) => void, language: "en" | "es" = "en") {
@@ -20,6 +22,7 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
     transcript: "",
     error: null,
     ttsMode: null,
+    quotaExceeded: false,
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -233,20 +236,19 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
         }
       }, 20000);
 
-      // Give ElevenLabs 5s before giving up (cold starts are usually <3s)
+      // Give ElevenLabs 10s before giving up — cold start + audio generation can take 3-7s
       loadTimeoutId = setTimeout(() => {
         if (resolved) return;
-        console.warn("[voice] ElevenLabs timeout — falling back to browser TTS");
-        abortCtrl.abort(); // cancel in-flight fetch so it can't play after fallback ends
+        console.warn("[voice] ElevenLabs timeout after 10s — falling back to browser TTS");
+        abortCtrl.abort();
         if (currentAudioRef.current) {
           currentAudioRef.current.pause();
           currentAudioRef.current = null;
         }
         window.speechSynthesis?.cancel();
-        // Run fallback TTS so the user still hears the response
         setState((s) => ({ ...s, ttsMode: "browser" }));
         fallbackTTS(text, finish, language);
-      }, 5000);
+      }, 10000);
 
       // Try ElevenLabs first
       try {
@@ -286,8 +288,12 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           return;
         } else {
           const detail = await res.json().catch(() => ({})) as Record<string, unknown>;
-          console.error(`[voice] ElevenLabs ${res.status} — falling back to browser TTS. Detail:`, detail);
-          console.error(`[voice] Fix: go to elevenlabs.io → get new API key → Vercel → Settings → Env Vars → update ELEVENLABS_API_KEY`);
+          const isQuota = detail.code === "quota_exceeded";
+          console.error(`[voice] ElevenLabs ${res.status} (${detail.code ?? "unknown"}) — falling back to browser TTS`, detail);
+          if (isQuota) {
+            console.warn("[voice] ElevenLabs quota exhausted. Upgrade at elevenlabs.io/pricing to restore the AI voice.");
+            setState((s) => ({ ...s, quotaExceeded: true }));
+          }
         }
       } catch (err) {
         if ((err as Error).name === "AbortError") return; // intentional abort — timeout handler took over

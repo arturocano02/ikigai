@@ -697,7 +697,7 @@ export default function ConversationPage() {
             style={{
               background: voice.state.error
                 ? "rgba(248,113,113,0.12)"
-                : voice.state.ttsMode === "browser"
+                : voice.state.quotaExceeded || voice.state.ttsMode === "browser"
                 ? "rgba(251,191,36,0.1)"
                 : voice.state.isListening && voice.state.audioLevel > 0.08
                 ? "rgba(34,197,94,0.1)"
@@ -706,7 +706,7 @@ export default function ConversationPage() {
                 : "rgba(255,255,255,0.03)",
               border: `1px solid ${
                 voice.state.error ? "rgba(248,113,113,0.35)"
-                : voice.state.ttsMode === "browser" ? "rgba(251,191,36,0.25)"
+                : voice.state.quotaExceeded || voice.state.ttsMode === "browser" ? "rgba(251,191,36,0.25)"
                 : voice.state.isListening && voice.state.audioLevel > 0.08 ? "rgba(34,197,94,0.25)"
                 : "rgba(255,255,255,0.08)"
               }`,
@@ -718,7 +718,7 @@ export default function ConversationPage() {
               className="w-2 h-2 rounded-full shrink-0"
               style={{
                 background: voice.state.error ? "#f87171"
-                  : voice.state.ttsMode === "browser" ? "#fbbf24"
+                  : voice.state.quotaExceeded || voice.state.ttsMode === "browser" ? "#fbbf24"
                   : voice.state.isListening && voice.state.audioLevel > 0.08 ? "#22c55e"
                   : voice.state.isListening ? "#facc15"
                   : "rgba(255,255,255,0.2)",
@@ -728,12 +728,14 @@ export default function ConversationPage() {
             />
             <span className="text-[10px] tracking-wide" style={{
               color: voice.state.error ? "#f87171"
-                : voice.state.ttsMode === "browser" ? "#fbbf24"
+                : voice.state.quotaExceeded || voice.state.ttsMode === "browser" ? "#fbbf24"
                 : voice.state.isListening ? "rgba(255,255,255,0.45)"
                 : "rgba(255,255,255,0.2)",
             }}>
               {voice.state.error
                 ? (language === "es" ? "Error de micrófono · toca para solucionar" : "Mic error · tap to fix")
+                : voice.state.quotaExceeded
+                ? (language === "es" ? "Cuota de voz agotada · usando voz del dispositivo" : "AI voice quota used up · using device voice")
                 : voice.state.ttsMode === "browser"
                 ? (language === "es" ? "Usando voz del dispositivo" : "Using device voice")
                 : voice.state.isSpeaking
