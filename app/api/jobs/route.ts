@@ -5,19 +5,33 @@ import type { JobMatch, IkigaiSynthesis } from "@/types/ikigai";
 const client = new Anthropic();
 
 // Countries to try in order — stops when we have enough results
-const ADZUNA_COUNTRIES = ["us", "gb", "au", "ca", "es", "nl"];
+const ADZUNA_COUNTRIES = ["us", "gb", "au", "ca", "es", "nl", "fr", "de"];
+
+// Prefix appended to search terms to bias towards a seniority level.
+// Level 2 (mid) has no prefix — it's the natural baseline.
+const SENIORITY_PREFIX: Record<number, string> = {
+  1: "junior",
+  2: "",
+  3: "senior",
+  4: "lead",
+  5: "director",
+};
 
 export async function POST(req: NextRequest) {
-  const { keywords, synthesis, country } = await req.json() as {
+  const { keywords, synthesis, country, seniority = 2 } = await req.json() as {
     keywords: string;
     synthesis?: IkigaiSynthesis;
-    country?: string; // single country code: "us" | "gb" | "au" | "ca"
+    country?: string;
+    seniority?: number; // 1=Entry 2=Mid 3=Senior 4=Lead 5=Executive
   };
 
   // Use simple, searchable job titles if available; otherwise extract first word of each keyword
-  const searchTerms: string[] = synthesis?.jobSearchTerms?.length
+  const baseTerms: string[] = synthesis?.jobSearchTerms?.length
     ? synthesis.jobSearchTerms
     : keywords.split(",").map((k) => k.trim().split(/\s+/).slice(0, 2).join(" ")).filter(Boolean);
+
+  const prefix = SENIORITY_PREFIX[seniority] ?? "";
+  const searchTerms = prefix ? baseTerms.map((t) => `${prefix} ${t}`) : baseTerms;
 
   const jobs: JobMatch[] = [];
   let totalFound = 0;
@@ -191,7 +205,7 @@ Return only valid JSON:
 }
 
 function formatSalary(min: number, max: number, country: string): string {
-  const sym = country === "gb" ? "£" : country === "au" ? "A$" : country === "ca" ? "C$" : (country === "es" || country === "nl") ? "€" : "$";
+  const sym = country === "gb" ? "£" : country === "au" ? "A$" : country === "ca" ? "C$" : (country === "es" || country === "nl" || country === "fr" || country === "de") ? "€" : "$";
   return `${sym}${Math.round(min / 1000)}k-${sym}${Math.round(max / 1000)}k`;
 }
 

@@ -15,7 +15,17 @@ const COUNTRIES = [
   { code: "ca", label: "🇨🇦 CA" },
   { code: "es", label: "🇪🇸 Spain" },
   { code: "nl", label: "🇳🇱 NL" },
+  { code: "fr", label: "🇫🇷 France" },
+  { code: "de", label: "🇩🇪 Germany" },
 ] as const;
+
+const SENIORITY_LABELS: Record<number, { short: string; long: string }> = {
+  1: { short: "Entry", long: "Entry Level" },
+  2: { short: "Mid", long: "Mid-Level" },
+  3: { short: "Senior", long: "Senior" },
+  4: { short: "Lead", long: "Lead / Manager" },
+  5: { short: "Exec", long: "Director / VP" },
+};
 
 type CountryCode = (typeof COUNTRIES)[number]["code"];
 
@@ -27,6 +37,7 @@ function CareersContent() {
   const [selectedJob, setSelectedJob] = useState<JobMatch | null>(null);
   const [country, setCountry] = useState<CountryCode>("us");
   const [minScore, setMinScore] = useState(60);
+  const [seniority, setSeniority] = useState(2);
   const [countryTotals, setCountryTotals] = useState<Record<string, number | null>>({});
   const [countryLoading, setCountryLoading] = useState<Record<string, boolean>>({});
   const [savedJobs, setSavedJobs] = useState<JobMatch[]>(() => {
@@ -49,21 +60,26 @@ function CareersContent() {
     });
   }, []);
 
-  const fetchJobs = useCallback(async (c: CountryCode, signal?: AbortSignal) => {
+  const fetchJobs = useCallback(async (c: CountryCode, sen: number, signal?: AbortSignal) => {
     setLoading(true);
     setSelectedJob(null);
 
     let synthesis: IkigaiSynthesis | undefined;
     try {
       const raw = sessionStorage.getItem("ikigai_synthesis");
-      if (raw) synthesis = JSON.parse(raw);
+      if (!raw) {
+        const lsRaw = localStorage.getItem("ikigai_synthesis_result");
+        if (lsRaw) synthesis = JSON.parse(lsRaw);
+      } else {
+        synthesis = JSON.parse(raw);
+      }
     } catch { /* ignore */ }
 
     try {
       const res = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keywords, synthesis, country: c }),
+        body: JSON.stringify({ keywords, synthesis, country: c, seniority: sen }),
         signal,
       });
       const data = await res.json();
@@ -81,7 +97,7 @@ function CareersContent() {
   // Initial load
   useEffect(() => {
     const controller = new AbortController();
-    fetchJobs(country, controller.signal);
+    fetchJobs(country, seniority, controller.signal);
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -89,7 +105,7 @@ function CareersContent() {
   const handleCountryChange = async (c: CountryCode) => {
     if (c === country) return;
     setCountry(c);
-    fetchJobs(c);
+    fetchJobs(c, seniority);
 
     // If we haven't fetched total for this country yet, fetch it in background
     if (countryTotals[c] === undefined && !countryLoading[c]) {
@@ -103,7 +119,7 @@ function CareersContent() {
         const res = await fetch("/api/jobs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ keywords, synthesis, country: c }),
+          body: JSON.stringify({ keywords, synthesis, country: c, seniority }),
         });
         const data = await res.json();
         if (typeof data.totalFound === "number") {
@@ -262,6 +278,37 @@ function CareersContent() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Seniority slider */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase tracking-widest text-white/30">Seniority level</p>
+              <span className="text-xs font-semibold" style={{ color: "#f97316" }}>
+                {SENIORITY_LABELS[seniority].long}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[9px] text-white/25 shrink-0">Entry</span>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={seniority}
+                onChange={(e) => {
+                  const s = Number(e.target.value);
+                  setSeniority(s);
+                  fetchJobs(country, s);
+                }}
+                className="flex-1 h-1 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #f97316 0%, #f97316 ${((seniority - 1) / 4) * 100}%, rgba(255,255,255,0.1) ${((seniority - 1) / 4) * 100}%, rgba(255,255,255,0.1) 100%)`,
+                  WebkitAppearance: "none",
+                }}
+              />
+              <span className="text-[9px] text-white/25 shrink-0">Executive</span>
             </div>
           </div>
 

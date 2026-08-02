@@ -150,10 +150,27 @@ export default function ConversationPage() {
   // Read all client-only storage after hydration — never in useState initializers
   // (that caused React #418 hydration mismatch: server has no sessionStorage/localStorage)
   useEffect(() => {
-    // 0. Check auth state so we know whether to show the sign-in prompt on reveal
+    // 0. Check auth state — show sign-in prompt on load for unauthenticated users
+    //    (unless they're resuming a session, in which case we don't interrupt)
+    let isResumingSession = false;
+    try {
+      isResumingSession = !!sessionStorage.getItem("ikigai_resume_session");
+    } catch { /* ignore */ }
+
     createClient().auth.getUser().then(({ data }) => {
-      setIsSignedIn(!!data.user);
-    }).catch(() => { /* ignore */ });
+      const signedIn = !!data.user;
+      setIsSignedIn(signedIn);
+      if (!signedIn && !isResumingSession) {
+        setSignInContext("begin");
+        setShowSignInPrompt(true);
+      }
+    }).catch(() => {
+      // Can't determine auth state — show prompt anyway to encourage sign-in
+      if (!isResumingSession) {
+        setSignInContext("begin");
+        setShowSignInPrompt(true);
+      }
+    });
 
     // 1. Resume session passed via sessionStorage from the home page "Continue" button
     try {
@@ -265,12 +282,6 @@ export default function ConversationPage() {
 
   function beginWithCountdown() {
     if (audioUnlocked || countdown !== null) return;
-    // Show sign-in nudge for unauthenticated users before investing time in the conversation
-    if (!isSignedIn) {
-      setSignInContext("begin");
-      setShowSignInPrompt(true);
-      return;
-    }
     startConversation();
   }
 

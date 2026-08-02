@@ -171,12 +171,15 @@ function RevealContent() {
     router.push("/conversation");
   }
 
-  function handleCareers() {
+  function handleCareers(pathTitle?: string, pathKeywords?: string[]) {
     try {
       sessionStorage.setItem("ikigai_synthesis", JSON.stringify(synthesis));
     } catch { /* ignore */ }
-    const kw = synthesis!.careerKeywords?.join(",") || "";
-    router.push(`/careers?title=${encodeURIComponent(synthesis!.title)}&keywords=${encodeURIComponent(kw)}`);
+    const kw = pathKeywords?.join(",") || synthesis!.careerKeywords?.join(",") || "";
+    const title = pathTitle
+      ? `${synthesis!.title} — ${pathTitle}`
+      : synthesis!.title;
+    router.push(`/careers?title=${encodeURIComponent(title)}&keywords=${encodeURIComponent(kw)}`);
   }
 
   return (
@@ -559,7 +562,7 @@ function CareerPathsSection({
   onJobSearch,
 }: {
   paths: NonNullable<import("@/types/ikigai").IkigaiSynthesis["careerPaths"]>;
-  onJobSearch: () => void;
+  onJobSearch: (pathTitle?: string, pathKeywords?: string[]) => void;
 }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
@@ -655,9 +658,9 @@ function CareerPathsSection({
                       ))}
                     </ol>
 
-                    {/* Job search CTA */}
+                    {/* Job search CTA — uses this path's searchTerms */}
                     <button
-                      onClick={onJobSearch}
+                      onClick={() => onJobSearch(path.title, path.searchTerms)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium touch-manipulation"
                       style={{
                         background: color + "12",
@@ -668,7 +671,7 @@ function CareerPathsSection({
                       }}
                     >
                       <TrendingUp className="w-3.5 h-3.5" />
-                      See matching job postings
+                      See jobs for this future
                       <ChevronRight className="w-3.5 h-3.5 opacity-60" />
                     </button>
                   </div>
@@ -793,7 +796,7 @@ function SectionList({
   onCityQuests,
 }: {
   synthesis: IkigaiSynthesis;
-  onJobSearch: () => void;
+  onJobSearch: (pathTitle?: string, pathKeywords?: string[]) => void;
   onCityQuests: () => void;
 }) {
   const [openKey, setOpenKey] = useState<string | null>("purposeLife");
@@ -1050,7 +1053,7 @@ function SectionList({
         <div className="pt-2">
           <p className="text-sm text-white/45 font-light leading-relaxed mb-4">Search for real job postings that match your Ikigai on LinkedIn and other boards.</p>
           <button
-            onClick={onJobSearch}
+            onClick={() => onJobSearch()}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-medium touch-manipulation"
             style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", minHeight: 48, WebkitTapHighlightColor: "transparent" }}
           >
