@@ -8,8 +8,9 @@ import { IkigaiMap } from "@/components/ikigai/IkigaiMap";
 import { useVoice } from "@/lib/useVoice";
 import { useIkigai, type SavedSession } from "@/lib/useIkigai";
 import { useResponsiveSize, useIsMobile } from "@/lib/useResponsiveSize";
-import { Mic, MicOff, Send, Keyboard, ArrowLeft, X } from "lucide-react";
+import { Mic, MicOff, Send, Keyboard, ArrowLeft, X, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/track";
+import { createClient } from "@/lib/supabase/client";
 
 type ConvLength = "ultra" | "short" | "medium" | "long";
 
@@ -78,6 +79,10 @@ export default function ConversationPage() {
   const [hasPreviousResult, setHasPreviousResult] = useState(false);
   const [showMicHelp, setShowMicHelp] = useState(false);
   const [showRevealNudge, setShowRevealNudge] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+  const pendingSignInRef = useRef(false); // if true, redirect to OAuth after synthesis completes
   const revealNudgeFiredRef = useRef(false);
 
   const [convLength, setConvLength] = useState<ConvLength>("short");
@@ -143,6 +148,11 @@ export default function ConversationPage() {
   // Read all client-only storage after hydration — never in useState initializers
   // (that caused React #418 hydration mismatch: server has no sessionStorage/localStorage)
   useEffect(() => {
+    // 0. Check auth state so we know whether to show the sign-in prompt on reveal
+    createClient().auth.getUser().then(({ data }) => {
+      setIsSignedIn(!!data.user);
+    }).catch(() => { /* ignore */ });
+
     // 1. Resume session passed via sessionStorage from the home page "Continue" button
     try {
       const raw = sessionStorage.getItem("ikigai_resume_session");
@@ -209,7 +219,7 @@ export default function ConversationPage() {
     if (ikigai.phase === "revealed" && ikigai.synthesis) {
       voice.stopListening();
       voice.cancelSpeech();
-      setOverlayLocked(true); // keep the dark overlay on screen during navigation
+      setOverlayLocked(true);
       sessionStorage.setItem("ikigai_session", JSON.stringify({
         messages: ikigai.messages,
         messageCount: ikigai.messages.length,
@@ -218,8 +228,16 @@ export default function ConversationPage() {
         insights: ikigai.insights,
         currentFocus: ikigai.currentFocus,
       }));
-      // Synthesis is already persisted to sessionStorage/localStorage by useIkigai
-      router.push("/reveal");
+      // Synthesis already persisted to localStorage by useIkigai — survives OAuth redirect
+      if (pendingSignInRef.current) {
+        // User chose "Sign in" — redirect through Google OAuth then land on /reveal
+        createClient().auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}/auth/callback?next=/reveal` },
+        }).catch(() => router.push("/reveal")); // fallback if OAuth fails
+      } else {
+        router.push("/reveal");
+      }
     }
   }, [ikigai.phase, ikigai.synthesis]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -268,11 +286,31 @@ export default function ConversationPage() {
     return () => clearTimeout(t);
   }, [countdown]);
 
-  function handleCenterClick() {
+  function handleCenterClick(skipSignInPrompt = false) {
+    if (!skipSignInPrompt && !isSignedIn) {
+      // Pause the conversation and show the sign-in nudge first
+      voice.cancelSpeech();
+      setShowSignInPrompt(true);
+      return;
+    }
     revealingRef.current = true;
     voice.stopListening();
     voice.cancelSpeech();
     speakRef.current = null; // prevent any queued speaks from firing
+    isProcessingRef.current = false;
+    setOrbState("thinking");
+    triggerSynthesis();
+  }
+
+  async function handleSignInAndReveal() {
+    setSigningIn(true);
+    pendingSignInRef.current = true;
+    setShowSignInPrompt(false);
+    // Start synthesis immediately so it runs while OAuth loads
+    revealingRef.current = true;
+    voice.stopListening();
+    voice.cancelSpeech();
+    speakRef.current = null;
     isProcessingRef.current = false;
     setOrbState("thinking");
     triggerSynthesis();
@@ -759,7 +797,7 @@ export default function ConversationPage() {
               transition={{ delay: 1.5 }}
             >
               <motion.button
-                onClick={canReveal ? () => { voice.cancelSpeech(); handleCenterClick(); } : undefined}
+                onClick={canReveal ? () => handleCenterClick() : undefined}
                 className="relative flex items-center gap-3 px-7 py-3.5 rounded-full font-light text-sm tracking-wider touch-manipulation transition-all duration-700"
                 style={{
                   background: canReveal
@@ -884,7 +922,7 @@ export default function ConversationPage() {
             <button
               onClick={() => {
                 revealingRef.current = false;
-                triggerSynthesis();
+                handleCenterClick(true); // skip sign-in prompt on retry
               }}
               className="px-8 py-3 rounded-full text-white/80 text-sm font-light tracking-wider touch-manipulation"
               style={{
@@ -914,6 +952,84 @@ export default function ConversationPage() {
             isMobile={isMobile}
             synthesisStageIdx={synthesisStageIdx}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Sign-in prompt — shown when unauthenticated user clicks Reveal */}
+      <AnimatePresence>
+        {showSignInPrompt && (
+          <motion.div
+            className="fixed inset-0 z-[80] flex items-center justify-center p-5"
+            style={{ backdropFilter: "blur(16px)", background: "rgba(4,4,14,0.8)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="relative w-full max-w-sm rounded-2xl p-7 flex flex-col gap-5"
+              style={{ background: "rgba(10,10,18,0.98)", border: "1px solid rgba(255,255,255,0.09)", boxShadow: "0 32px 80px rgba(0,0,0,0.7)" }}
+              initial={{ scale: 0.92, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 8 }}
+              transition={{ duration: 0.28, ease: [0.34, 1.2, 0.64, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Icon */}
+              <div className="flex justify-center">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.3)" }}>
+                  <Sparkles className="w-6 h-6" style={{ color: "#d4a017" }} />
+                </div>
+              </div>
+
+              {/* Copy */}
+              <div className="text-center flex flex-col gap-2">
+                <h2 className="text-base font-medium text-white/90">
+                  {language === "es" ? "Guarda tu Ikigai" : "Save your Ikigai"}
+                </h2>
+                <p className="text-[13px] text-white/50 font-light leading-relaxed">
+                  {language === "es"
+                    ? "Si inicias sesión ahora, tu conversación y resultados se guardarán en tu cuenta para siempre. Muy recomendado."
+                    : "Sign in and your conversation and results will be saved to your account so you can come back to them anytime. Highly recommended."}
+                </p>
+              </div>
+
+              {/* Sign in button */}
+              <button
+                onClick={handleSignInAndReveal}
+                disabled={signingIn}
+                className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl text-sm font-medium transition-all touch-manipulation"
+                style={{
+                  background: "rgba(212,160,23,0.15)",
+                  border: "1px solid rgba(212,160,23,0.45)",
+                  color: "rgba(255,255,255,0.9)",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                  <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </svg>
+                {signingIn
+                  ? (language === "es" ? "Generando tu Ikigai..." : "Generating your Ikigai...")
+                  : (language === "es" ? "Continuar con Google" : "Continue with Google")}
+              </button>
+
+              {/* Skip */}
+              <button
+                onClick={() => {
+                  setShowSignInPrompt(false);
+                  handleCenterClick(true);
+                }}
+                className="text-center text-xs text-white/30 hover:text-white/55 transition-colors touch-manipulation"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                {language === "es" ? "Continuar sin cuenta" : "Continue without signing in"}
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
