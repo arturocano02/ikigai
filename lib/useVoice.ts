@@ -32,6 +32,9 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Persistent Audio element pre-unlocked during a user gesture so iOS allows
+  // subsequent play() calls that happen outside a gesture (AI responses).
+  const unlockedAudioRef = useRef<HTMLAudioElement | null>(null);
   // Tracks everything spoken so far (final + interim) so manual stop can flush it
   const pendingTranscriptRef = useRef<string>("");
   // Prevents onend from restarting when we intentionally stopped
@@ -266,7 +269,10 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
           if (resolved) return; // timeout fired while downloading blob
 
           const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
+          // Reuse the pre-unlocked Audio element (created during the user gesture via
+          // unlockAudio()) so iOS allows play() without a new gesture. Fall back to
+          // new Audio() on desktop where autoplay is unrestricted.
+          const audio = unlockedAudioRef.current ?? new Audio();
           currentAudioRef.current = audio;
           setState((s) => ({ ...s, ttsMode: "elevenlabs" }));
           // 350ms buffer: lets speakers fully clear before mic re-opens to prevent feedback
@@ -276,12 +282,13 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
             console.error("[voice] ElevenLabs audio playback error, falling back to browser TTS");
             if (!resolved) { setState((s) => ({ ...s, ttsMode: "browser" })); fallbackTTS(text, finish, language); }
           };
+          audio.src = url;
           try {
             await audio.play();
             // Audio is playing — clear the ElevenLabs timeout so it plays to completion
             if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
           } catch {
-            // Autoplay blocked (common on iOS) — fall through to browser TTS below
+            // Autoplay still blocked — fall through to browser TTS below
             URL.revokeObjectURL(url);
             currentAudioRef.current = null;
           }
@@ -313,7 +320,22 @@ export function useVoice(onTranscript: (text: string) => void, language: "en" | 
     setState((s) => ({ ...s, isSpeaking: false }));
   }, []);
 
-  return { state, startListening, stopListening, speak, cancelSpeech };
+  // Call this synchronously inside a user-gesture handler (e.g. "Begin" button click).
+  // Creates and plays a silent Audio element so iOS marks it as gesture-unlocked,
+  // allowing all subsequent play() calls on the same element without a gesture.
+  const unlockAudio = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (!unlockedAudioRef.current) {
+      unlockedAudioRef.current = new Audio();
+    }
+    const a = unlockedAudioRef.current;
+    // Minimal silent MP3 — just enough for iOS to register a play() in the gesture
+    a.src = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjQxLjEwMAAAAAAAAAAAAAAA";
+    a.volume = 0;
+    a.play().catch(() => {});
+  }, []);
+
+  return { state, startListening, stopListening, speak, cancelSpeech, unlockAudio };
 }
 
 function fallbackTTS(text: string, onEnd: () => void, language: "en" | "es" = "en") {

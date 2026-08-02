@@ -264,22 +264,17 @@ export default function ConversationPage() {
   function beginWithCountdown() {
     if (audioUnlocked || countdown !== null) return;
     try { sessionStorage.setItem("ikigai_language", language); } catch { /* ignore */ }
-    // Unlock audio on iOS: both unlocks must happen synchronously within the user gesture.
+    // Unlock audio on iOS — must happen synchronously within the user gesture.
     // 1. speechSynthesis unlock — for browser TTS fallback
     try {
       const unlock = new SpeechSynthesisUtterance("");
       unlock.volume = 0;
       window.speechSynthesis?.speak(unlock);
     } catch { /* ignore */ }
-    // 2. HTMLAudioElement unlock — for ElevenLabs. Without this, iOS blocks audio.play()
-    //    on elements created later (outside a user gesture), causing permanent TTS fallback.
-    try {
-      // Minimal silent MP3 (44 bytes) played at zero volume to satisfy iOS autoplay policy
-      const silentMp3 = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjQxLjEwMAAAAAAAAAAAAAAA";
-      const a = new Audio(silentMp3);
-      a.volume = 0;
-      a.play().catch(() => {});
-    } catch { /* ignore */ }
+    // 2. HTMLAudioElement unlock — creates the persistent Audio element and plays
+    //    silence on it NOW so iOS allows future play() calls on the same element
+    //    (ElevenLabs responses) without requiring another gesture.
+    voice.unlockAudio();
     setCountdown(3);
   }
 
