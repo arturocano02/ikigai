@@ -5,7 +5,7 @@ import type { JobMatch, IkigaiSynthesis } from "@/types/ikigai";
 const client = new Anthropic();
 
 // Countries to try in order — stops when we have enough results
-const ADZUNA_COUNTRIES = ["us", "gb", "au", "ca"];
+const ADZUNA_COUNTRIES = ["us", "gb", "au", "ca", "es", "nl"];
 
 export async function POST(req: NextRequest) {
   const { keywords, synthesis, country } = await req.json() as {
@@ -191,7 +191,7 @@ Return only valid JSON:
 }
 
 function formatSalary(min: number, max: number, country: string): string {
-  const sym = country === "gb" ? "£" : country === "au" ? "A$" : country === "ca" ? "C$" : "$";
+  const sym = country === "gb" ? "£" : country === "au" ? "A$" : country === "ca" ? "C$" : (country === "es" || country === "nl") ? "€" : "$";
   return `${sym}${Math.round(min / 1000)}k-${sym}${Math.round(max / 1000)}k`;
 }
 

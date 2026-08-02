@@ -80,6 +80,8 @@ export default function ConversationPage() {
   const [showMicHelp, setShowMicHelp] = useState(false);
   const [showRevealNudge, setShowRevealNudge] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  // "begin" = shown before starting the conversation; "reveal" = shown before synthesis
+  const [signInContext, setSignInContext] = useState<"begin" | "reveal">("begin");
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const pendingSignInRef = useRef(false); // if true, redirect to OAuth after synthesis completes
@@ -263,6 +265,17 @@ export default function ConversationPage() {
 
   function beginWithCountdown() {
     if (audioUnlocked || countdown !== null) return;
+    // Show sign-in nudge for unauthenticated users before investing time in the conversation
+    if (!isSignedIn) {
+      setSignInContext("begin");
+      setShowSignInPrompt(true);
+      return;
+    }
+    startConversation();
+  }
+
+  function startConversation() {
+    if (audioUnlocked || countdown !== null) return;
     try { sessionStorage.setItem("ikigai_language", language); } catch { /* ignore */ }
     // Unlock audio on iOS — must happen synchronously within the user gesture.
     // 1. speechSynthesis unlock — for browser TTS fallback
@@ -292,8 +305,8 @@ export default function ConversationPage() {
 
   function handleCenterClick(skipSignInPrompt = false) {
     if (!skipSignInPrompt && !isSignedIn) {
-      // Pause the conversation and show the sign-in nudge first
       voice.cancelSpeech();
+      setSignInContext("reveal");
       setShowSignInPrompt(true);
       return;
     }
@@ -306,18 +319,26 @@ export default function ConversationPage() {
     triggerSynthesis();
   }
 
-  async function handleSignInAndReveal() {
+  async function handleSignInWithGoogle() {
     setSigningIn(true);
-    pendingSignInRef.current = true;
     setShowSignInPrompt(false);
-    // Start synthesis immediately so it runs while OAuth loads
-    revealingRef.current = true;
-    voice.stopListening();
-    voice.cancelSpeech();
-    speakRef.current = null;
-    isProcessingRef.current = false;
-    setOrbState("thinking");
-    triggerSynthesis();
+    if (signInContext === "reveal") {
+      // Start synthesis while OAuth loads — result will be in localStorage on return
+      pendingSignInRef.current = true;
+      revealingRef.current = true;
+      voice.stopListening();
+      voice.cancelSpeech();
+      speakRef.current = null;
+      isProcessingRef.current = false;
+      setOrbState("thinking");
+      triggerSynthesis();
+    } else {
+      // "begin" context — just redirect; user will start the conversation when they return
+      createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/conversation` },
+      }).catch(() => { setSigningIn(false); });
+    }
   }
 
   function switchToText() {
@@ -964,7 +985,7 @@ export default function ConversationPage() {
         )}
       </AnimatePresence>
 
-      {/* Sign-in prompt — shown when unauthenticated user clicks Reveal */}
+      {/* Sign-in prompt — shown before starting (begin context) or before synthesis (reveal context) */}
       <AnimatePresence>
         {showSignInPrompt && (
           <motion.div
@@ -991,21 +1012,27 @@ export default function ConversationPage() {
                 </div>
               </div>
 
-              {/* Copy */}
+              {/* Copy — differs by context */}
               <div className="text-center flex flex-col gap-2">
                 <h2 className="text-base font-medium text-white/90">
-                  {language === "es" ? "Guarda tu Ikigai" : "Save your Ikigai"}
+                  {signInContext === "begin"
+                    ? (language === "es" ? "Guarda tu conversación" : "Save your conversation")
+                    : (language === "es" ? "Guarda tu Ikigai" : "Save your Ikigai")}
                 </h2>
                 <p className="text-[13px] text-white/50 font-light leading-relaxed">
-                  {language === "es"
-                    ? "Si inicias sesión ahora, tu conversación y resultados se guardarán en tu cuenta para siempre. Muy recomendado."
-                    : "Sign in and your conversation and results will be saved to your account so you can come back to them anytime. Highly recommended."}
+                  {signInContext === "begin"
+                    ? (language === "es"
+                        ? "Si inicias sesión, tu conversación y resultados se guardarán automáticamente en tu cuenta. Muy recomendado."
+                        : "Sign in and your conversation and results will be saved to your account automatically. Highly recommended.")
+                    : (language === "es"
+                        ? "Si inicias sesión ahora, tu Ikigai se guardará en tu cuenta para siempre."
+                        : "Sign in now and your Ikigai will be saved to your account forever.")}
                 </p>
               </div>
 
               {/* Sign in button */}
               <button
-                onClick={handleSignInAndReveal}
+                onClick={handleSignInWithGoogle}
                 disabled={signingIn}
                 className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl text-sm font-medium transition-all touch-manipulation"
                 style={{
@@ -1017,12 +1044,14 @@ export default function ConversationPage() {
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.60-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
                   <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
                   <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
                 </svg>
                 {signingIn
-                  ? (language === "es" ? "Generando tu Ikigai..." : "Generating your Ikigai...")
+                  ? (signInContext === "reveal"
+                      ? (language === "es" ? "Generando tu Ikigai..." : "Generating your Ikigai...")
+                      : (language === "es" ? "Redirigiendo..." : "Redirecting..."))
                   : (language === "es" ? "Continuar con Google" : "Continue with Google")}
               </button>
 
@@ -1030,7 +1059,11 @@ export default function ConversationPage() {
               <button
                 onClick={() => {
                   setShowSignInPrompt(false);
-                  handleCenterClick(true);
+                  if (signInContext === "begin") {
+                    startConversation();
+                  } else {
+                    handleCenterClick(true);
+                  }
                 }}
                 className="text-center text-xs text-white/30 hover:text-white/55 transition-colors touch-manipulation"
                 style={{ WebkitTapHighlightColor: "transparent" }}

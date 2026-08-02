@@ -9,10 +9,12 @@ const SAVED_JOBS_KEY = "ikigai_saved_jobs";
 import type { JobMatch, IkigaiSynthesis } from "@/types/ikigai";
 
 const COUNTRIES = [
-  { code: "us", label: "US" },
-  { code: "gb", label: "UK" },
-  { code: "au", label: "AU" },
-  { code: "ca", label: "CA" },
+  { code: "us", label: "🇺🇸 US" },
+  { code: "gb", label: "🇬🇧 UK" },
+  { code: "au", label: "🇦🇺 AU" },
+  { code: "ca", label: "🇨🇦 CA" },
+  { code: "es", label: "🇪🇸 Spain" },
+  { code: "nl", label: "🇳🇱 NL" },
 ] as const;
 
 type CountryCode = (typeof COUNTRIES)[number]["code"];
