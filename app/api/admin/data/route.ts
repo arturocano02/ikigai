@@ -28,10 +28,21 @@ function extractSession(s: {
   synthesis: unknown; conversation_data: unknown; created_at: string;
 }) {
   const synth = (s.synthesis ?? {}) as Record<string, unknown>;
-  const scoreObj = synth.ikigaiScore as { score?: number; reasoning?: string } | undefined;
-  const convData = s.conversation_data as { messageCount?: number; messages?: unknown[]; language?: string } | null;
-  const messageCount = convData?.messageCount
-    ?? (Array.isArray(convData?.messages) ? convData!.messages.length : null);
+  const scoreObj = synth.ikigaiScore as { score?: number; reasoning?: string; detail?: string } | undefined;
+  type RawMsg = { role: string; content: string; timestamp?: number };
+  const convData = s.conversation_data as { messageCount?: number; messages?: RawMsg[]; language?: string } | null;
+  const messages = Array.isArray(convData?.messages) ? convData!.messages : [];
+  const messageCount = convData?.messageCount ?? (messages.length || null);
+
+  // Compute conversation duration from first and last message timestamps
+  let durationMinutes: number | null = null;
+  if (messages.length >= 2) {
+    const ts = messages.map((m) => m.timestamp).filter((t): t is number => typeof t === "number");
+    if (ts.length >= 2) {
+      durationMinutes = Math.round((Math.max(...ts) - Math.min(...ts)) / 60000);
+    }
+  }
+
   return {
     id: s.id,
     title: s.title,
@@ -39,12 +50,19 @@ function extractSession(s: {
     created_at: s.created_at,
     score: typeof scoreObj?.score === "number" ? scoreObj.score : null,
     scoreReasoning: scoreObj?.reasoning ?? null,
+    scoreDetail: scoreObj?.detail ?? null,
     language: (convData?.language as "en" | "es" | undefined) ?? detectLanguage(synth),
     depth: synthesisDepth(synth),
     messageCount,
+    durationMinutes,
     highlights: Array.isArray(synth.highlights) ? (synth.highlights as string[]).slice(0, 3) : [],
     careerPaths: Array.isArray(synth.careerPaths)
-      ? (synth.careerPaths as Array<{ title: string; tagline: string }>).map((p) => ({ title: p.title, tagline: p.tagline }))
+      ? (synth.careerPaths as Array<{ title: string; tagline: string; timeline?: string; searchTerms?: string[] }>).map((p) => ({
+          title: p.title,
+          tagline: p.tagline,
+          timeline: p.timeline ?? null,
+          searchTerms: p.searchTerms ?? [],
+        }))
       : [],
     sideQuests: Array.isArray(synth.sideQuests) ? (synth.sideQuests as string[]).slice(0, 3) : [],
     patterns: Array.isArray(synth.patterns) ? (synth.patterns as string[]).slice(0, 4) : [],

@@ -78,12 +78,14 @@ type SessionSummary = {
   language: "en" | "es";
   depth: number;
   messageCount: number | null;
+  durationMinutes: number | null;
   highlights: string[];
-  careerPaths: { title: string; tagline: string }[];
+  careerPaths: { title: string; tagline: string; timeline: string | null; searchTerms: string[] }[];
   sideQuests: string[];
   patterns: string[];
   strengths: string[];
   explanation: string | null;
+  scoreDetail: string | null;
   ikigaiTitle: string;
 };
 
@@ -327,43 +329,47 @@ function UserDetail({ user, onClose }: { user: AdminUser; onClose: () => void })
                           transition={{ duration: 0.22 }}
                           className="overflow-hidden"
                         >
-                          <div className="px-4 pb-5 pt-1 space-y-4"
+                          <div className="px-4 pb-5 pt-2 space-y-4"
                             style={{ borderTop: "1px solid rgba(168,85,247,0.08)" }}>
 
-                            {/* Score detail */}
-                            {s.score !== null && (
-                              <div className="flex items-center gap-3 p-3 rounded-xl"
-                                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                <ScoreRing score={s.score} size={44} />
-                                <div>
-                                  <p className="text-xs font-medium" style={{ color: scoreColor(s.score) }}>
-                                    Ikigai score: {s.score}%
-                                  </p>
-                                  {s.scoreReasoning && (
-                                    <p className="text-[11px] text-white/40 mt-0.5 leading-relaxed">{s.scoreReasoning}</p>
-                                  )}
-                                </div>
-                              </div>
+                            {/* Subtitle / one-line ikigai */}
+                            {s.subtitle && (
+                              <p className="text-sm text-white/55 font-light leading-relaxed italic">"{s.subtitle}"</p>
                             )}
 
-                            {/* Session meta */}
-                            <div className="flex flex-wrap gap-4 text-[11px] text-white/30">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {fmtDate(s.created_at)}
-                              </span>
-                              {s.messageCount !== null && (
-                                <span className="flex items-center gap-1">
-                                  <MessageSquare className="w-3 h-3" />
-                                  {s.messageCount} messages
-                                </span>
+                            {/* Score + meta row */}
+                            <div className="flex flex-wrap items-center gap-3">
+                              {s.score !== null && (
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+                                  style={{ background: scoreColor(s.score) + "14", border: `1px solid ${scoreColor(s.score)}35` }}>
+                                  <ScoreRing score={s.score} size={28} />
+                                  <div>
+                                    <p className="text-[10px] font-semibold" style={{ color: scoreColor(s.score) }}>
+                                      {s.score}% Ikigai score
+                                    </p>
+                                    {s.scoreReasoning && (
+                                      <p className="text-[10px] text-white/35 leading-tight">{s.scoreReasoning}</p>
+                                    )}
+                                  </div>
+                                </div>
                               )}
-                              <span className="flex items-center gap-1">
-                                <BarChart2 className="w-3 h-3" />
-                                Depth: {s.depth}
-                              </span>
-                              <span>{s.language === "es" ? "🇪🇸 Spanish" : "🇬🇧 English"}</span>
+                              <div className="flex flex-wrap gap-3 text-[10px] text-white/30">
+                                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{fmtDate(s.created_at)}</span>
+                                {s.messageCount !== null && (
+                                  <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{s.messageCount} msgs</span>
+                                )}
+                                {s.durationMinutes !== null && s.durationMinutes > 0 && (
+                                  <span className="flex items-center gap-1">⏱ {s.durationMinutes} min</span>
+                                )}
+                                <span className="flex items-center gap-1"><BarChart2 className="w-3 h-3" />depth {s.depth}</span>
+                                <span>{s.language === "es" ? "🇪🇸" : "🇬🇧"}</span>
+                              </div>
                             </div>
+
+                            {/* Score deep-dive */}
+                            {s.scoreDetail && (
+                              <p className="text-[11px] text-white/35 font-light leading-relaxed px-1">{s.scoreDetail}</p>
+                            )}
 
                             {/* Highlights */}
                             {s.highlights.length > 0 && (
@@ -377,62 +383,91 @@ function UserDetail({ user, onClose }: { user: AdminUser; onClose: () => void })
                               </div>
                             )}
 
-                            {/* Patterns */}
-                            {s.patterns.length > 0 && (
-                              <div>
-                                <p className="text-[9px] tracking-widest uppercase text-white/20 mb-2">Patterns</p>
-                                <div className="space-y-1">
-                                  {s.patterns.map((p, i) => (
-                                    <div key={i} className="flex items-start gap-2">
-                                      <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: "#a855f7" }} />
-                                      <span className="text-xs text-white/50 font-light">{p}</span>
+                            {/* Patterns + Strengths side-by-side */}
+                            {(s.patterns.length > 0 || s.strengths.length > 0) && (
+                              <div className="grid grid-cols-2 gap-3">
+                                {s.patterns.length > 0 && (
+                                  <div>
+                                    <p className="text-[9px] tracking-widest uppercase text-white/20 mb-1.5">Patterns</p>
+                                    <div className="space-y-1">
+                                      {s.patterns.map((p, i) => (
+                                        <div key={i} className="flex items-start gap-1.5">
+                                          <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: "#a855f7" }} />
+                                          <span className="text-[11px] text-white/45 font-light leading-snug">{p}</span>
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
-                                </div>
+                                  </div>
+                                )}
+                                {s.strengths.length > 0 && (
+                                  <div>
+                                    <p className="text-[9px] tracking-widest uppercase text-white/20 mb-1.5">Strengths</p>
+                                    <div className="space-y-1">
+                                      {s.strengths.map((p, i) => (
+                                        <div key={i} className="flex items-start gap-1.5">
+                                          <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: "#10b981" }} />
+                                          <span className="text-[11px] text-white/45 font-light leading-snug">{p}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
 
-                            {/* Strengths */}
-                            {s.strengths.length > 0 && (
-                              <div>
-                                <p className="text-[9px] tracking-widest uppercase text-white/20 mb-2">Strengths</p>
-                                <div className="space-y-1">
-                                  {s.strengths.map((p, i) => (
-                                    <div key={i} className="flex items-start gap-2">
-                                      <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: "#10b981" }} />
-                                      <span className="text-xs text-white/50 font-light">{p}</span>
-                                    </div>
-                                  ))}
+                            {/* Future paths — full cards */}
+                            {s.careerPaths.length > 0 && (() => {
+                              const PATH_COLORS = ["#06b6d4", "#a855f7", "#d4a017", "#10b981"];
+                              return (
+                                <div>
+                                  <p className="text-[9px] tracking-widest uppercase text-white/20 mb-2">Potential Futures</p>
+                                  <div className="space-y-2">
+                                    {s.careerPaths.map((cp, i) => {
+                                      const c = PATH_COLORS[i % PATH_COLORS.length];
+                                      return (
+                                        <div key={i} className="px-3 py-2.5 rounded-xl"
+                                          style={{ background: c + "0a", border: `1px solid ${c}25` }}>
+                                          <div className="flex items-start gap-2">
+                                            <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                                              style={{ background: c + "22", border: `1px solid ${c}55`, color: c }}>
+                                              {i + 1}
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-medium text-white/75 leading-snug">{cp.title}</p>
+                                              <p className="text-[11px] text-white/35 font-light mt-0.5 leading-relaxed">{cp.tagline}</p>
+                                              {cp.timeline && (
+                                                <p className="text-[10px] mt-1 font-light" style={{ color: c, opacity: 0.65 }}>{cp.timeline}</p>
+                                              )}
+                                              {cp.searchTerms.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                                  {cp.searchTerms.map((t, ti) => (
+                                                    <span key={ti} className="text-[9px] px-1.5 py-0.5 rounded-full"
+                                                      style={{ background: c + "15", color: c, border: `1px solid ${c}30` }}>
+                                                      {t}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-
-                            {/* Career paths */}
-                            {s.careerPaths.length > 0 && (
-                              <div>
-                                <p className="text-[9px] tracking-widest uppercase text-white/20 mb-2">Career paths</p>
-                                <div className="space-y-1.5">
-                                  {s.careerPaths.map((cp, i) => (
-                                    <div key={i} className="px-3 py-2 rounded-lg"
-                                      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                      <p className="text-xs font-medium text-white/65">{cp.title}</p>
-                                      <p className="text-[11px] text-white/30 font-light mt-0.5">{cp.tagline}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
 
                             {/* Side quests */}
                             {s.sideQuests.length > 0 && (
                               <div>
-                                <p className="text-[9px] tracking-widets uppercase text-white/20 mb-2">Side quests</p>
-                                <div className="space-y-1">
+                                <p className="text-[9px] tracking-widest uppercase text-white/20 mb-1.5">Side quests</p>
+                                <div className="flex flex-wrap gap-1.5">
                                   {s.sideQuests.map((sq, i) => (
-                                    <div key={i} className="flex items-start gap-2">
-                                      <span className="mt-1.5 text-[9px]" style={{ color: "#a855f7" }}>→</span>
-                                      <span className="text-xs text-white/45 font-light">{sq}</span>
-                                    </div>
+                                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full"
+                                      style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", color: "#c084fc" }}>
+                                      {sq}
+                                    </span>
                                   ))}
                                 </div>
                               </div>
@@ -441,13 +476,13 @@ function UserDetail({ user, onClose }: { user: AdminUser; onClose: () => void })
                             {/* Full explanation */}
                             {s.explanation && (
                               <details className="group">
-                                <summary className="text-[10px] tracking-widets uppercase text-white/20 cursor-pointer select-none list-none flex items-center gap-1.5">
+                                <summary className="text-[10px] tracking-widest uppercase text-white/20 cursor-pointer select-none list-none flex items-center gap-1.5">
                                   <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
-                                  Full analysis
+                                  Full analysis text
                                 </summary>
-                                <div className="mt-3 space-y-2">
+                                <div className="mt-2 pl-1 space-y-2">
                                   {s.explanation.split(/\n\n+/).filter(Boolean).map((para, i) => (
-                                    <p key={i} className="text-xs text-white/40 font-light leading-relaxed">{para}</p>
+                                    <p key={i} className="text-xs text-white/35 font-light leading-relaxed">{para}</p>
                                   ))}
                                 </div>
                               </details>
@@ -520,39 +555,50 @@ function AnonRow({ anon, index }: { anon: AnonUser; index: number }) {
           >
             <div className="px-4 pb-4 space-y-2"
               style={{ borderTop: "1px solid rgba(245,158,11,0.08)" }}>
-              {anon.sessions.map((s) => (
-                <div key={s.id} className="pt-3 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <ScoreRing score={s.score} size={28} />
-                    <div className="min-w-0">
-                      <p className="text-xs text-white/70 font-medium truncate">{s.title}</p>
-                      {s.subtitle && <p className="text-[11px] text-white/35 truncate">{s.subtitle}</p>}
+              {anon.sessions.map((s) => {
+                const PATH_COLORS = ["#06b6d4", "#a855f7", "#d4a017", "#10b981"];
+                return (
+                  <div key={s.id} className="pt-3 space-y-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div className="flex items-start gap-2">
+                      <ScoreRing score={s.score} size={32} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-white/70 font-medium leading-snug">{s.title}</p>
+                        {s.subtitle && <p className="text-[11px] text-white/40 font-light italic mt-0.5">"{s.subtitle}"</p>}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-3 text-[11px] text-white/30">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />{fmtDate(s.created_at)}
-                    </span>
-                    {s.messageCount !== null && (
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" />{s.messageCount} messages
-                      </span>
+                    <div className="flex flex-wrap gap-3 text-[10px] text-white/30">
+                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{fmtDate(s.created_at)}</span>
+                      {s.messageCount !== null && <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{s.messageCount} msgs</span>}
+                      {s.durationMinutes !== null && s.durationMinutes > 0 && <span>⏱ {s.durationMinutes} min</span>}
+                      <span><BarChart2 className="w-3 h-3 inline mr-1" />depth {s.depth}</span>
+                      <span>{s.language === "es" ? "🇪🇸" : "🇬🇧"}</span>
+                    </div>
+                    {s.scoreReasoning && (
+                      <p className="text-[10px] text-white/30 font-light leading-snug">{s.scoreReasoning}</p>
                     )}
-                    <span className="flex items-center gap-1">
-                      <BarChart2 className="w-3 h-3" />depth {s.depth}
-                    </span>
-                    <span>{s.language === "es" ? "🇪🇸 ES" : "🇬🇧 EN"}</span>
+                    {s.patterns.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {s.patterns.map((p, pi) => (
+                          <span key={pi} className="text-[10px] px-1.5 py-0.5 rounded-full"
+                            style={{ background: "rgba(245,158,11,0.08)", color: "#fbbf24" }}>{p}</span>
+                        ))}
+                      </div>
+                    )}
+                    {s.careerPaths.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[9px] tracking-widest uppercase text-white/15">Futures</p>
+                        {s.careerPaths.map((cp, ci) => (
+                          <div key={ci} className="flex items-start gap-1.5 text-[11px]">
+                            <span className="shrink-0 text-[9px] font-semibold mt-0.5" style={{ color: PATH_COLORS[ci % 4] }}>{ci + 1}.</span>
+                            <span className="text-white/50 font-medium">{cp.title}</span>
+                            {cp.timeline && <span className="text-white/25 font-light">· {cp.timeline}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {s.patterns.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {s.patterns.map((p, pi) => (
-                        <span key={pi} className="text-[10px] px-1.5 py-0.5 rounded-full"
-                          style={{ background: "rgba(245,158,11,0.08)", color: "#fbbf24" }}>{p}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
